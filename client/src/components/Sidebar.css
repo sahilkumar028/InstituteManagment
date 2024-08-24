@@ -1,0 +1,42 @@
+/* src/components/Sidebar.css */
+
+/* Sidebar Container */
+.sidebar-container {
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+  }
+  
+  /* Sidebar Styles for Dark and Light Mode */
+  .sidebar-dark {
+    background-color: #202020;
+  }
+  
+  .sidebar-light {
+    background-color: #F1F1F1;
+  }
+  
+  .nav-link.active {
+    background-color: #1C4E80;
+    color: #FFF;
+  }
+  
+  .nav-link {
+    color: #7E909A;
+  }
+  
+  /* Mobile Sidebar Styles */
+  @media (max-width: 767.98px) {
+    .sidebar-container {
+      transform: translateX(-100%);
+      width: 0;
+    }
+  
+    .collapse.show {
+      transform: translateX(0);
+      background-color: #7E909A;
+    }
+  }
+  
