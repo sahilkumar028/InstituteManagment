@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'; // Or other pages
 import AddStudent from './pages/AddStudents'; // Or other pages
 import ListStudents from './pages/ListStudents'; // Or other components
 import IDCard from './pages/IDCard'; // Or other components
+import IssuedCertificateDownloads from './pages/IssuedCertificateDownload'; // Or other components
 import IssuedCertificate from './pages/IssuedCertificate'; // Or other components
 import Navbar from './components/Navbar'; // Or other components
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -31,6 +32,7 @@ const App = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/AddStudents" element={<AddStudent />} />
             <Route path="/ListStudents" element={<ListStudents />} />
+            <Route path="/IssuedCertificate" element={<IssuedCertificateDownloads />} />
             <Route path="/issued/:id" element={<IssuedCertificate />} />
             <Route path="/idcard/:id" element={<IDCard />} />
             {/* Add your other routes here */}

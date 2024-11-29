@@ -18,7 +18,7 @@ const IssuedCertificate = () => {
         { id: Date.now(), subject: '', theory: '', practical: '', obtained: '' }
     ]);
     const [formValues, setFormValues] = useState({
-        photo: 'http://localhost:5000/api/images/'+(student?.photo)|| '',
+        photo: 'http://localhost:5000/api/images/'+(student?.photo) || '',
         registration: student?.regId || '',
         name: student?.name || '',
         fathersname: student?.fatherName || '',
@@ -51,20 +51,6 @@ const IssuedCertificate = () => {
         }));
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setFormValues(prevValues => ({
-                ...prevValues,
-                photo: reader.result
-            }));
-        };
-        if (file) {
-            reader.readAsDataURL(file);
-        }
-    };
-
     const handleAddRow = () => {
         if (rows.length < 5) {
             setRows([...rows, { id: Date.now(), subject: '', theory: '', practical: '', obtained: '' }]);
@@ -81,10 +67,15 @@ const IssuedCertificate = () => {
         const { name, value } = e.target;
         const updatedRows = rows.map(row => {
             if (row.id === id) {
-                return { ...row, [name]: value };
+                // Ensure we are updating the correct field in the row
+                return { ...row, [name]: value
+                    
+                 };
             }
             return row;
         });
+    
+        console.log('Updated Rows:', updatedRows);
         setRows(updatedRows);
         calculateObtainedMarks(id);
     };
@@ -140,7 +131,7 @@ const IssuedCertificate = () => {
 
     const currentYear = new Date().getFullYear();
     const yearOptions = [];
-    const nyear=[]
+    const nyear = [];
     for (let i = 0; i < 5; i++) {
         const year = currentYear - i;
         const nextYear = year + 1;
@@ -153,9 +144,32 @@ const IssuedCertificate = () => {
         'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
     ];
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('http://localhost:5000/savedata', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...formValues,
+                    rows // Include rows data in the request
+                }),
+            });
+            if (response.ok) {
+                alert('Data saved successfully!');
+            } else {
+                alert('Failed to save data');
+            }
+        } catch (error) {
+            alert('An error occurred while saving data');
+        }
+    };
+
     return (
         <div className="container mt-2">
-            <form method="post" action="/savedata" encType="multipart/form-data">
+            <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     {formValues.photo && <img src={formValues.photo} alt="Preview" className="mt-2 img-thumbnail" style={{ maxWidth: '200px' }} />}
                 </div>
@@ -282,90 +296,88 @@ const IssuedCertificate = () => {
                         disabled
                     />
                 </div>
-                <div className="form-group mt-4">
-                    <h4>Subjects</h4>
-                    <div className="table-responsive">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Serial No</th>
-                                    <th>Subject</th>
-                                    <th>Theory Marks</th>
-                                    <th>Practical Marks</th>
-                                    <th>Obtained Marks</th>
-                                    <th>Action</th>
+                <div className="table-responsive mt-4">
+                    <table className="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Serial No</th>
+                                <th>Subject</th>
+                                <th>Theory Marks (Max 30)</th>
+                                <th>Practical Marks (Max 70)</th>
+                                <th>Obtained Marks</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((row, index) => (
+                                <tr key={row.id}>
+                                    <td className='text-center'>{index + 1}</td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            name="subject"
+                                            className="form-control"
+                                            onChange={(e) => handleRowChange(row.id, e)}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            name="theory"
+                                            className="form-control"
+                                            onChange={(e) => handleRowChange(row.id, e)}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            name="practical"
+                                            className="form-control"
+                                            onChange={(e) => handleRowChange(row.id, e)}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            name="obtained"
+                                            className="form-control"
+                                            value={row.obtained}
+                                            disabled
+                                        />
+                                    </td>
+                                    <td>
+                                        <button
+                                            type="button"
+                                            className="btn btn-danger"
+                                            onClick={() => handleRemoveRow(row.id)}
+                                        >
+                                            Remove
+                                        </button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row, index) => (
-                                    <tr key={row.id}>
-                                        <td>{index + 1}</td>
-                                        <td>
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                placeholder="Subject"
-                                                name="subject"
-                                                value={row.subject}
-                                                onChange={(e) => handleRowChange(row.id, e)}
-                                            />
-                                        </td>
-                                        <td>
-                                            <input
-                                                type="number"
-                                                className="form-control"
-                                                placeholder="Theory Marks"
-                                                name="theory"
-                                                value={row.theory}
-                                                onChange={(e) => handleRowChange(row.id, e)}
-                                            />
-                                        </td>
-                                        <td>
-                                            <input
-                                                type="number"
-                                                className="form-control"
-                                                placeholder="Practical Marks"
-                                                name="practical"
-                                                value={row.practical}
-                                                onChange={(e) => handleRowChange(row.id, e)}
-                                            />
-                                        </td>
-                                        <td>
-                                            <input
-                                                type="number"
-                                                className="form-control"
-                                                placeholder="Obtained Marks"
-                                                name="obtained"
-                                                value={row.obtained}
-                                                onChange={(e) => handleRowChange(row.id, e)}
-                                                disabled
-                                            />
-                                        </td>
-                                        <td>
-                                            <button
-                                                type="button"
-                                                className="btn btn-danger"
-                                                onClick={() => handleRemoveRow(row.id)}
-                                            >
-                                                Remove
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={handleAddRow}
-                        >
-                            Add Row
-                        </button>
-                    </div>
+                            ))}
+                            {rows.length < 5 && (
+                                <button type="button" className="btn btn-primary" onClick={handleAddRow}>
+                                    Add Subject
+                                </button>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
-
-                {errorMessage && <div className="alert alert-danger mt-3">{errorMessage}</div>}
-
+                {/* <div className="form-group">
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={handleAddRow}
+                    >
+                        Add Subject
+                    </button>
+                </div> */}
+                {errorMessage && (
+                    <div className="alert alert-danger">
+                        {errorMessage}
+                    </div>
+                )}
                 <div className="form-group">
                     <label htmlFor="Grade">Grade</label>
                     <input
@@ -435,9 +447,9 @@ const IssuedCertificate = () => {
                         ))}
                     </select>
                 </div>
-
-                
-                <button type="submit" className="btn btn-primary mt-4">Submit</button>
+                <div className="form-group mt-4">
+                    <button type="submit" className="btn btn-success">Save</button>
+                </div>
             </form>
         </div>
     );

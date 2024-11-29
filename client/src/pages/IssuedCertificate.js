@@ -18,7 +18,7 @@ const IssuedCertificate = () => {
         { id: Date.now(), subject: '', theory: '', practical: '', obtained: '' }
     ]);
     const [formValues, setFormValues] = useState({
-        photo: 'http://localhost:5000/api/images/'+(student?.photo)|| '',
+        photo: 'http://localhost:5000/api/images/' + (student?.photo || ''),
         registration: student?.regId || '',
         name: student?.name || '',
         fathersname: student?.fatherName || '',
@@ -30,9 +30,6 @@ const IssuedCertificate = () => {
         duration: student?.duration || '',
         performance: '',
         certificate: student?.course || '',
-        subject:[],
-        theory:[],
-        practical:[],
         Grade: '',
         IssueDay: '',
         IssueYear: '',
@@ -40,76 +37,10 @@ const IssuedCertificate = () => {
     });
     const [errorMessage, setErrorMessage] = useState('');
 
-    useEffect(() => {
-        calculateGrade();
-    }, [rows]);
-
-    if (!student) return <div>No student data available</div>;
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormValues(prevValues => ({
-            ...prevValues,
-            [name]: value
-        }));
-    };
-
-
-    const handleAddRow = () => {
-        if (rows.length < 5) {
-            setRows([...rows, { id: Date.now(), subject: '', theory: '', practical: '', obtained: '' }]);
-        } else {
-            alert('Maximum 5 rows allowed.');
-        }
-    };
-
-    const handleRemoveRow = (id) => {
-        setRows(rows.filter(row => row.id !== id));
-    };
-
-    const handleRowChange = (id, e) => {
-        const { name, value } = e.target;
-        const updatedRows = rows.map(row => {
-            if (row.id === id) {
-                // Ensure we are updating the correct field in the row
-                return { ...row, [name]: value };
-            }
-            return row;
-        });
-    
-        // Debugging output to check updatedRows
-        console.log('Updated Rows:', updatedRows);
-        
-        // Update state with new rows data
-        setRows(updatedRows);
-    
-        // Recalculate obtained marks based on updated rows
-        calculateObtainedMarks(id);
-    };
-    
-
-    const calculateObtainedMarks = (id) => {
-        const updatedRows = rows.map(row => {
-            if (row.id === id) {
-                const theory = parseInt(row.theory) || 0;
-                const practical = parseInt(row.practical) || 0;
-                if (theory > 30 || practical > 70) {
-                    setErrorMessage('Total marks in theory cannot exceed 30 and practical cannot exceed 70!');
-                    return { ...row, theory: '', practical: '', obtained: '' };
-                } else {
-                    setErrorMessage('');
-                    return { ...row, obtained: theory + practical };
-                }
-            }
-            return row;
-        });
-        setRows(updatedRows);
-        calculateGrade();
-    };
-
-    const calculateGrade = () => {
-        const totalMarks = rows.reduce((sum, row) => sum + parseInt(row.obtained || 0), 0);
-        const percentage = (totalMarks / (rows.length * 100)) * 100;
+    // Move calculateGrade function above useEffect
+    const calculateGrade = (updatedRows) => {
+        const totalMarks = updatedRows.reduce((sum, row) => sum + parseInt(row.obtained || 0), 0);
+        const percentage = (totalMarks / (updatedRows.length * 100)) * 100;
         let grade = '';
         if (percentage >= 85) {
             grade = 'A';
@@ -135,6 +66,57 @@ const IssuedCertificate = () => {
             case 'D': return 'Average';
             default: return '';
         }
+    };
+
+    useEffect(() => {
+        calculateGrade(rows);
+    }, [rows]);
+
+    if (!student) return <div>No student data available</div>;
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormValues(prevValues => ({
+            ...prevValues,
+            [name]: value
+        }));
+    };
+
+    const handleAddRow = () => {
+        if (rows.length < 5) {
+            setRows([...rows, { id: Date.now(), subject: '', theory: '', practical: '', obtained: '' }]);
+        } else {
+            alert('Maximum 5 rows allowed.');
+        }
+    };
+
+    const handleRemoveRow = (id) => {
+        setRows(rows.filter(row => row.id !== id));
+    };
+
+    const handleRowChange = (id, e) => {
+        const { name, value } = e.target;
+        const updatedRows = rows.map(row => {
+            if (row.id === id) {
+                const updatedRow = { ...row, [name]: value };
+                if (name === "theory" || name === "practical") {
+                    const theory = parseInt(updatedRow.theory) || 0;
+                    const practical = parseInt(updatedRow.practical) || 0;
+                    if (theory > 30 || practical > 70) {
+                        setErrorMessage('Total marks in theory cannot exceed 30 and practical cannot exceed 70!');
+                        updatedRow.obtained = '';
+                    } else {
+                        setErrorMessage('');
+                        updatedRow.obtained = theory + practical;
+                    }
+                }
+                return updatedRow;
+            }
+            return row;
+        });
+
+        setRows(updatedRows);
+        calculateGrade(updatedRows);
     };
 
     const currentYear = new Date().getFullYear();
@@ -304,98 +286,95 @@ const IssuedCertificate = () => {
                         disabled
                     />
                 </div>
-                <div className="table-responsive mt-4">
-                    <table className="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Serial No</th>
-                                <th>Subject</th>
-                                <th>Theory Marks (Max 30)</th>
-                                <th>Practical Marks (Max 70)</th>
-                                <th>Obtained Marks</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((row, index) => (
-                                <tr key={row.id}>
-                                    <td className='text-center'>{index + 1}</td>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            name="subject"
-                                            className="form-control"
-                                            value={row.subject}
-                                            onChange={(e) => handleRowChange(row.id, e)}
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            name="theory"
-                                            className="form-control"
-                                            value={row.theory}
-                                            onChange={(e) => handleRowChange(row.id, e)}
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            name="practical"
-                                            className="form-control"
-                                            value={row.practical}
-                                            onChange={(e) => handleRowChange(row.id, e)}
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            name="obtained"
-                                            className="form-control"
-                                            value={row.obtained}
-                                            disabled
-                                        />
-                                    </td>
-                                    <td>
-                                        <button
-                                            type="button"
-                                            className="btn btn-danger"
-                                            onClick={() => handleRemoveRow(row.id)}
-                                        >
-                                            Remove
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
                 <div className="form-group">
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={handleAddRow}
-                    >
-                        Add Subject
-                    </button>
-                </div>
-                {errorMessage && (
-                    <div className="alert alert-danger">
-                        {errorMessage}
+                    <label className='h3'>Subjects</label>
+                    <div className="row mb-3">
+                        <div className="h6 col-sm-1">
+                            Serial No
+                        </div>
+                        <div className="h6 col-sm">
+                            Subject
+                        </div>
+                        <div className="h6 col-sm">
+                            Theory Marks (Max 30)
+                        </div>
+                        <div className="h6 col-sm">
+                            Practical Marks (Max 70)
+                        </div>
+                        <div className="h6 col-sm">
+                            Obtained Marks
+                        </div>
+                        <div className="h6 col-sm">
+                            Actions
+                        </div>
                     </div>
-                )}
-                <div className="form-group">
-                    <label htmlFor="Grade">Grade</label>
-                    <input
-                        type="text"
-                        id="Grade"
-                        name="Grade"
-                        className="form-control"
-                        value={formValues.Grade}
-                        onChange={handleChange}
-                        disabled
-                    />
+                    {rows.map((row, index) => (
+                        <div key={row.id} className="row mb-3">
+                            <div className="col-sm-1 text-center">
+                                {index + 1}
+                            </div>
+                            <div className="col-sm">
+                                <input
+                                    type="text"
+                                    placeholder="Subject"
+                                    name="subject"
+                                    value={row.subject}
+                                    className="form-control"
+                                    onChange={(e) => handleRowChange(row.id, e)}
+                                />
+                            </div>
+                            <div className="col-sm">
+                                <input
+                                    type="number"
+                                    placeholder="Theory"
+                                    name="theory"
+                                    value={row.theory}
+                                    className="form-control"
+                                    onChange={(e) => handleRowChange(row.id, e)}
+                                />
+                            </div>
+                            <div className="col-sm">
+                                <input
+                                    type="number"
+                                    placeholder="Practical"
+                                    name="practical"
+                                    value={row.practical}
+                                    className="form-control"
+                                    onChange={(e) => handleRowChange(row.id, e)}
+                                />
+                            </div>
+                            <div className="col-sm">
+                                <input
+                                    type="number"
+                                    placeholder="Obtained"
+                                    name="obtained"
+                                    value={row.obtained}
+                                    className="form-control"
+                                    readOnly
+                                />
+                            </div>
+                            <div className="col-sm">
+                                {index >= 0 && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-danger"
+                                        onClick={() => handleRemoveRow(row.id)}
+                                    >
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                    {rows.length < 5 && (
+                        <button type="button" className="btn btn-primary" onClick={handleAddRow}>
+                            Add Subject
+                        </button>
+                    )}
                 </div>
+
+                {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+                
                 <div className="form-group">
                     <label htmlFor="performance">Performance</label>
                     <input
@@ -404,6 +383,18 @@ const IssuedCertificate = () => {
                         name="performance"
                         className="form-control"
                         value={formValues.performance}
+                        onChange={handleChange}
+                        disabled
+                    />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="Grade">Grade</label>
+                    <input
+                        type="text"
+                        id="Grade"
+                        name="Grade"
+                        className="form-control"
+                        value={formValues.Grade}
                         onChange={handleChange}
                         disabled
                     />
@@ -431,10 +422,11 @@ const IssuedCertificate = () => {
                         className="form-control"
                         value={formValues.IssueMonth}
                         onChange={handleChange}
+                        required
                     >
                         <option value="">Select Month</option>
-                        {monthOptions.map(month => (
-                            <option key={month} value={month}>{month}</option>
+                        {monthOptions.map((month, index) => (
+                            <option key={index} value={month}>{month}</option>
                         ))}
                     </select>
                 </div>
@@ -453,9 +445,7 @@ const IssuedCertificate = () => {
                         ))}
                     </select>
                 </div>
-                <div className="form-group mt-4">
-                    <button type="submit" className="btn btn-success">Save</button>
-                </div>
+                <button type="submit" className="btn btn-success mt-3">Save</button>
             </form>
         </div>
     );
