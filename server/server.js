@@ -247,7 +247,12 @@ app.delete("/deletedata/registration/:registration", async (req, res) => {
     }
 });
 
-
+function titleCase(s) {
+    return s.toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+}
 
 app.get("/createCertificate/:registration", async (req, res) => {
   try {
@@ -297,24 +302,24 @@ app.get("/createCertificate/:registration", async (req, res) => {
     const base64String = buffer.toString('base64');
     const dataUrl = `data:image/jpeg;base64,${base64String}`;
 
-    doc.addImage(dataUrl, "JPEG", 440, 80, 100, 80);
+    doc.addImage(dataUrl, "JPEG", 440, 90, 80, 60);
 
     // Add text fields to the PDF
     doc.setFontSize(14);
-    doc.text(`${registration}`, 40, 70);
-    doc.text(`${name}`, 220, 180);
-    doc.text(`${fathersname}`, 220, 205);
-    doc.text(`${mothersname}`, 220, 230);
+    doc.text(`${registration}`, 70, 70);
+    doc.text(`${titleCase(name)}`, 220, 180);
+    doc.text(`${titleCase(fathersname)}`, 220, 205);
+    doc.text(`${titleCase(mothersname)}`, 220, 230);
     doc.text(`${dob}`, 440, 230);
     doc.text(`${rollno}`, 145, 260);
     doc.text(`${erollno}`, 330, 260);
     doc.text(`${session}`, 440, 260);
     doc.text(`${duration}`, 220, 280);
-    doc.text(`${performance}`, 345, 340);
+    doc.text(`${titleCase(performance)}`, 345, 340);
 
     
     doc.setFont("helvetica", "bold");
-    doc.text(`${cert}`, 300,420,null,null,"center");
+    doc.text(`${titleCase(cert)}`, 300,420,null,null,"center");
 
     // Table Headers
     const tableStartY = 460;
@@ -344,7 +349,7 @@ app.get("/createCertificate/:registration", async (req, res) => {
 
       if(rows[index]!==undefined){
         doc.text(`${index + 1}`, 50, rowY + 10);
-        doc.text(`${rows[index].subject || ""}`, 90, rowY + 10);
+        doc.text(`${titleCase(rows[index].subject) || ""}`, 90, rowY + 10);
         doc.text(`100`, 260, rowY + 10);
         doc.text(`${rows[index].theory || ""}`, 340, rowY + 10);
         doc.text(`${rows[index].practical || ""}`, 420, rowY + 10);
@@ -379,8 +384,8 @@ app.get("/createCertificate/:registration", async (req, res) => {
     // Add Issue Details
     doc.setFontSize(16);
     doc.text(`${Grade}`, 240, 610);
-    doc.text(`${IssueDay} ${IssueMonth}`, 240, 640);
-    doc.text(`${IssueYear}`, 380, 640);
+    doc.text(`${IssueDay}`, 240, 640);
+    doc.text(` ${titleCase(IssueMonth)} ${IssueYear}`, 380, 640);
 
     // Save PDF to a file and send it to the user
     const pdfPath = `./uploads/certificate_${registration}.pdf`;

@@ -1,0 +1,20 @@
+body {
+    height: 100vh;
+    margin: 0;
+  }
+  
+  .card {
+    border-radius: 10px;
+  }
+  
+  .text-center {
+    text-align: center;
+  }
+  
+  h1 {
+    font-size: 3rem;
+  }
+  #root{
+    height: 100%;
+  }
+  

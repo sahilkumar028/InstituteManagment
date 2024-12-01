@@ -13,6 +13,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 import './index.css'; // Custom CSS for theme colors
+import Login from './components/Login';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -22,7 +23,7 @@ const App = () => {
   };
 
   return (
-    <div className={darkMode ? 'dark-mode' : 'light-mode'}>
+    <div className={darkMode ? 'dark-mode' : 'light-mode'} className='h-100'>
       <Navbar toggleDarkMode={toggleDarkMode} darkMode={darkMode} />
       <div className={`d-flex ${darkMode ? 'bg-dark text-light' : 'bg-light text-dark'}`}>
 
@@ -35,10 +36,10 @@ const App = () => {
             <Route path="/IssuedCertificate" element={<IssuedCertificateDownloads />} />
             <Route path="/issued/:id" element={<IssuedCertificate />} />
             <Route path="/idcard/:id" element={<IDCard />} />
-            {/* Add your other routes here */}
           </Routes>
         </main>
       </div>
+      {/* <Login /> */}
     </div>
   );
 };
