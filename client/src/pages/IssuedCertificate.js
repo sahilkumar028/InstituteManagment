@@ -253,7 +253,7 @@ const IssuedCertificate = () => {
                         id="IssueYear"
                         name="IssueYear"
                         className="form-control"
-                        value={formValues.IssueYear}
+                        value={formValues.session}
                         onChange={handleChange}
                     >
                         <option value="">Select Year</option>
