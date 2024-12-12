@@ -18,7 +18,7 @@ const IssuedCertificate = () => {
         { id: Date.now(), subject: '', theory: '', practical: '', obtained: '' }
     ]);
     const [formValues, setFormValues] = useState({
-        photo: 'http://localhost:5000/api/images/'+(student?.photo) || '',
+        photo: 'http://192.168.1.250:5000/api/images/'+(student?.photo) || '',
         registration: student?.regId || '',
         name: student?.name || '',
         fathersname: student?.fatherName || '',
@@ -147,7 +147,7 @@ const IssuedCertificate = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:5000/savedata', {
+            const response = await fetch('http://192.168.1.250:5000/savedata', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

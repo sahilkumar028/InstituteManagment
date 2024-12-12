@@ -10,7 +10,7 @@ const IssuedCertificateDownloads = () => {
         // Fetch issued documents data
         const fetchIssuedDocuments = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/issued');
+                const response = await axios.get('http://192.168.1.250:5000/api/issued');
                 setStudents(response.data);
             } catch (error) {
                 setError(error.message);
@@ -32,7 +32,7 @@ const IssuedCertificateDownloads = () => {
     const handleDelete = async (registration) => {
         if (window.confirm("Are you sure you want to delete this record?")) {
             try {
-                await axios.delete(`http://localhost:5000/deletedata/registration/${registration}`);
+                await axios.delete(`http://192.168.1.250:5000/deletedata/registration/${registration}`);
                 setStudents(students.filter((student) => student.registration !== registration));
                 alert('Record deleted successfully!');
             } catch (error) {
@@ -91,7 +91,7 @@ const IssuedCertificateDownloads = () => {
                                             className="btn btn-primary btn-sm mb-2"
                                             onClick={() =>
                                                 handleDownload(
-                                                    `http://localhost:5000/createCertificate/${student.registration}`,
+                                                    `http://192.168.1.250:5000/createCertificate/${student.registration}`,
                                                     `${student.name}-Certificate.pdf`
                                                 )
                                             }

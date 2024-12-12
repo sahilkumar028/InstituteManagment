@@ -18,7 +18,7 @@ const Login = () => {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/login', credentials);
+      const response = await axios.post('http://192.168.1.250:5000/api/login', credentials);
 
       // Store the JWT token in localStorage
       localStorage.setItem('token', response.data.token);

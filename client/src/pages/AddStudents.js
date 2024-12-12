@@ -25,7 +25,7 @@ const AddStudents = () => {
 
   const courses = [
     { name: 'Office Automation', fee: 3600, duration: 3 },
-    { name: 'Diploma in Computer Application and Accounts', fee: 7200, duration: 6 },
+    { name: 'Diploma in Computer Application and Accounting', fee: 7200, duration: 6 },
     { name: 'Advance Diploma in Computer Application', fee: 14400, duration: 12 },
     { name: 'Advance Excel', fee: 2500, duration: 2 },
     { name: 'Tally/Tally Prime', fee: 4000, duration: 2 },
@@ -118,7 +118,7 @@ const AddStudents = () => {
     });
 
     try {
-      const response = await fetch('http://localhost:5000/add-student', {
+      const response = await fetch('http://192.168.1.250:5000/add-student', {
         method: 'POST',
         body: formData
       });

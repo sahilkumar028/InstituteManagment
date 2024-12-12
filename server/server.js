@@ -9,12 +9,12 @@ const { MongoClient } = require('mongodb');
 const { jsPDF } = require("jspdf");
 const fs = require('fs');
 
-const client = new MongoClient('mongodb://localhost:27017');
+const client = new MongoClient('mongodb://127.0.0.1:27017');
 const dbName = 'institute';
 
 // MongoDB URIs
-const studentDbUrl = "mongodb://localhost:27017/institute";
-const formDbUrl = "mongodb://localhost:27017/form_data";
+const studentDbUrl = "mongodb://127.0.0.1:27017/institute";
+const formDbUrl = "mongodb://127.0.0.1:27017/form_data";
 
 // Create MongoDB clients
 const studentClient = new MongoClient(studentDbUrl, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -277,7 +277,7 @@ app.get("/createCertificate/:registration", async (req, res) => {
       dob,
       rollno,
       erollno,
-      session,
+      IssueSession,
       duration,
       performance,
       certificate: cert,
@@ -298,11 +298,35 @@ app.get("/createCertificate/:registration", async (req, res) => {
 
     // Read and convert the student's photo to base64
     const filename = photo.split('/').pop();
-    const buffer = fs.readFileSync('uploads/'+filename);
-    const base64String = buffer.toString('base64');
-    const dataUrl = `data:image/jpeg;base64,${base64String}`;
+    const filePath = 'uploads/' + filename;
 
-    doc.addImage(dataUrl, "JPEG", 440, 90, 80, 60);
+    // Check if the file exists and is a file (not a directory)
+    try {
+        const stats = fs.lstatSync(filePath); // Get file stats
+
+        if (stats.isFile()) {
+            // Read the file and convert it to base64
+            const buffer = fs.readFileSync(filePath);
+            const base64String = buffer.toString('base64');
+            const dataUrl = `data:image/jpeg;base64,${base64String}`;
+
+            // Add the image to the document
+            doc.addImage(dataUrl, "JPEG", 440, 100, 80, 60);
+        } else {
+            console.log(`The path ${filePath} is not a file.`);
+        }
+    } catch (error) {
+        console.log(`File not found or error reading the file: ${filePath}`);
+        console.error(error);
+        // Handle the error appropriately
+    }
+    // previwes code
+    // const filename = photo.split('/').pop();
+    // const buffer = fs.readFileSync('uploads/'+filename);
+    // const base64String = buffer.toString('base64');
+    // const dataUrl = `data:image/jpeg;base64,${base64String}`;
+
+    // doc.addImage(dataUrl, "JPEG", 440, 100, 80, 60);
 
     // Add text fields to the PDF
     doc.setFontSize(14);
@@ -313,7 +337,7 @@ app.get("/createCertificate/:registration", async (req, res) => {
     doc.text(`${dob}`, 440, 230);
     doc.text(`${rollno}`, 145, 260);
     doc.text(`${erollno}`, 330, 260);
-    doc.text(`${session}`, 440, 260);
+    doc.text(`${IssueSession}`, 440, 260);
     doc.text(`${duration}`, 220, 280);
     doc.text(`${titleCase(performance)}`, 345, 340);
 
@@ -325,7 +349,7 @@ app.get("/createCertificate/:registration", async (req, res) => {
     const tableStartY = 460;
     doc.setFontSize(11);
     doc.setLineWidth(2);
-    doc.rect(40, tableStartY, 515, 15);
+    doc.rect(45, tableStartY, 520, 15);
     doc.text("S.NO", 50, tableStartY + 10);
     doc.text("Subject", 90, tableStartY + 10);
     doc.text("Total", 260, tableStartY + 10);
@@ -345,7 +369,7 @@ app.get("/createCertificate/:registration", async (req, res) => {
       const rowY = tableStartY + 15 + index * 15;
 
       // Draw border for each row
-      doc.rect(40, rowY, 515, 15);
+      doc.rect(45, rowY, 520, 15);
 
       if(rows[index]!==undefined){
         doc.text(`${index + 1}`, 50, rowY + 10);
@@ -374,7 +398,7 @@ app.get("/createCertificate/:registration", async (req, res) => {
 
     // Add Total Row
     const totalRowY = tableStartY + 15 + maxRows * 15;
-    doc.rect(40, totalRowY, 515, 15);
+    doc.rect(45, totalRowY, 520, 15);
     doc.text("Total", 90, totalRowY + 10);
     doc.text(`${maxMarks}`, 260, totalRowY + 10);
     doc.text(`${totalTheory}`, 340, totalRowY + 10);
@@ -384,8 +408,8 @@ app.get("/createCertificate/:registration", async (req, res) => {
     // Add Issue Details
     doc.setFontSize(16);
     doc.text(`${Grade}`, 240, 610);
-    doc.text(`${IssueDay}`, 240, 640);
-    doc.text(` ${titleCase(IssueMonth)} ${IssueYear}`, 380, 640);
+    doc.text(`${IssueDay}`, 240, 635);
+    doc.text(` ${titleCase(IssueMonth)} ${IssueYear}`, 380, 635);
 
     // Save PDF to a file and send it to the user
     const pdfPath = `./uploads/certificate_${registration}.pdf`;

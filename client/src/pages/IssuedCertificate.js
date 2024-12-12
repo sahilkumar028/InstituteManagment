@@ -18,7 +18,7 @@ const IssuedCertificate = () => {
         { id: Date.now(), subject: '', theory: '', practical: '', obtained: '' }
     ]);
     const [formValues, setFormValues] = useState({
-        photo: 'http://localhost:5000/api/images/' + (student?.photo || ''),
+        photo: 'http://192.168.1.250:5000/api/images/' + (student?.photo || ''),
         registration: student?.regId || '',
         name: student?.name || '',
         fathersname: student?.fatherName || '',
@@ -26,7 +26,7 @@ const IssuedCertificate = () => {
         dob: formatDate(student?.dob) || '',
         rollno: student?.regId || '',
         erollno: student?.regId[0] + student?.regId || '',
-        session: '',
+        IssueSession: '',
         duration: student?.duration || '',
         performance: '',
         certificate: student?.course || '',
@@ -129,7 +129,20 @@ const IssuedCertificate = () => {
         nyear.push(`${year}`);
     }
 
-    const dayOptions = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+    const dayOptions = Array.from({ length: 31 }, (_, i) => {
+        const day = i + 1;
+        let suffix = 'th';
+        
+        if (day % 10 === 1 && day !== 11) {
+          suffix = 'st';
+        } else if (day % 10 === 2 && day !== 12) {
+          suffix = 'nd';
+        } else if (day % 10 === 3 && day !== 13) {
+          suffix = 'rd';
+        }
+      
+        return `${day}${suffix}`;
+      });
     const monthOptions = [
         'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
     ];
@@ -137,7 +150,7 @@ const IssuedCertificate = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:5000/savedata', {
+            const response = await fetch('http://192.168.1.250:5000/savedata', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -248,10 +261,10 @@ const IssuedCertificate = () => {
                     />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="session">Session</label>
+                    <label htmlFor="IssueSession">Session</label>
                     <select
-                        id="IssueYear"
-                        name="IssueYear"
+                        id="IssueSession"
+                        name="IssueSession"
                         className="form-control"
                         value={formValues.session}
                         onChange={handleChange}
@@ -283,7 +296,6 @@ const IssuedCertificate = () => {
                         className="form-control"
                         value={formValues.certificate}
                         onChange={handleChange}
-                        disabled
                     />
                 </div>
                 <div className="form-group">

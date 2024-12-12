@@ -13,7 +13,7 @@ const IDCard = () => {
         // Fetch student details from API
         const fetchStudent = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/students/${id}`);
+                const response = await axios.get(`http://192.168.1.250:5000/api/students/${id}`);
                 setStudent(response.data);
             } catch (error) {
                 setError(error.message);
@@ -54,7 +54,7 @@ const IDCard = () => {
                 <strong>Address:</strong> {student.address}
             </div>
             <div style={{ marginBottom: '10px' }}>
-                <img src={`http://localhost:5000/api/images/${student.photo}`} alt="Student" style={{ width: '100%', borderRadius: '8px' }} />
+                <img src={`http://192.168.1.250:5000/api/images/${student.photo}`} alt="Student" style={{ width: '100%', borderRadius: '8px' }} />
             </div>
         </div>
     );
