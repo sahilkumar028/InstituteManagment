@@ -26,6 +26,9 @@ const Sidebar = ({ darkMode }) => {
               <Link className={`nav-link ${location.pathname === '/' ? 'active' : ''}`} to="/">Dashboard</Link>
             </li>
             <li className="nav-item">
+              <Link className={`nav-link ${location.pathname === '/EnquiryForm' ? 'active' : ''}`} to="/EnquiryForm">Enquiry Form</Link>
+            </li>
+            <li className="nav-item">
               <Link className={`nav-link ${location.pathname === '/AddStudents' ? 'active' : ''}`} to="/AddStudents">Add Students</Link>
             </li>
             <li className="nav-item">
@@ -33,6 +36,9 @@ const Sidebar = ({ darkMode }) => {
             </li>
             <li className="nav-item">
               <Link className={`nav-link ${location.pathname === '/IssuedCertificate' ? 'active' : ''}`} to="/IssuedCertificate">Issued Certificate</Link>
+            </li>
+            <li className="nav-item">
+              <Link className={`nav-link ${location.pathname === '/StudentTest' ? 'active' : ''}`} to="/StudentTest">StudentTest</Link>
             </li>
           </ul>
         </div>

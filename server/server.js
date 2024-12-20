@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const cors = require('cors');
 const Student = require('./models/Student');
+const Enquiry = require('./models/Enquiry');
 const { MongoClient } = require('mongodb');
 
 const { jsPDF } = require("jspdf");
@@ -16,11 +17,9 @@ const dbName = 'institute';
 // MongoDB URIs
 const studentDbUrl = "mongodb://127.0.0.1:27017/institute";
 const formDbUrl = "mongodb://127.0.0.1:27017/form_data";
-
 // Create MongoDB clients
 const studentClient = new MongoClient(studentDbUrl, { useNewUrlParser: true, useUnifiedTopology: true });
 const formClient = new MongoClient(formDbUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -88,6 +87,66 @@ app.post('/add-student', upload.fields([
         res.status(500).json({ message: 'Failed to add student', error });
     }
 });
+
+
+// Add Enquiry route
+// Add Enquiry route
+const EnquiryCounter = require('./models/EnquiryCounter');
+
+app.post('/add-enquiry', async (req, res) => {
+    try {
+        const { date, name, phone, course, remarks } = req.body;
+
+        // Validation: Ensure required fields are provided
+        if (!date || !name || !phone || !course) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        // Get current date, month, and year for Enquiry ID (DDMMYY)
+        const today = new Date();
+        const day = today.getDate().toString().padStart(2, '0');  // Pad to ensure two digits
+        const month = (today.getMonth() + 1).toString().padStart(2, '0');  // Month is 0-indexed, so add 1
+        const year = today.getFullYear().toString().slice(-2);  // Get last two digits of the year
+        const dateKey = `${day}${month}${year}`;  // Format as DDMMYY
+
+        // Find or create a counter for the current date (DDMMYY)
+        let counter = await EnquiryCounter.findOne({ date: dateKey });
+
+        if (!counter) {
+            // If no counter exists for this date, create one starting with serial number 1
+            counter = new EnquiryCounter({ date: dateKey, serialNumber: 1 });
+        } else {
+            // If counter exists, increment the serial number
+            counter.serialNumber += 1;
+        }
+
+        // Save the updated counter
+        await counter.save();
+
+        // Generate the enquiryId in the format DDMMYY-XXX
+        const enquiryId = `${dateKey}-${counter.serialNumber.toString().padStart(3, '0')}`;
+
+        // Create a new enquiry
+        const enquiry = new Enquiry({
+            date: new Date(date),
+            name,
+            phone,
+            course,
+            remarks,
+            enquiryId,  // Save the generated enquiryId
+        });
+
+        // Save the enquiry to the database
+        const savedEnquiry = await enquiry.save();
+
+        res.status(200).json({ message: 'Enquiry added successfully', enquiryId: savedEnquiry.enquiryId });
+    } catch (error) {
+        console.error('Error adding enquiry:', error);
+        res.status(500).json({ message: 'Failed to add enquiry', error });
+    }
+});
+
+
 
 // Endpoint to get the list of students
 app.get('/api/students', async (req, res) => {
@@ -349,10 +408,10 @@ app.get("/createCertificate/:registration", async (req, res) => {
               console.log('QR Code Data URL:', qrDataUrl);
         
               // Add the QR code to the PDF
-              doc.addImage(qrDataUrl, 'JPEG', 100, 100, 80, 80)
+              doc.addImage(qrDataUrl, 'JPEG', 100, 100, 85, 80)
 
               // Add the image to the document
-              doc.addImage(dataUrl, "JPEG", 440, 100, 80, 70);
+              doc.addImage(dataUrl, "JPEG", 440, 100, 85, 70);
           } else {
               console.log(`The path ${filePath} is not a file.`);
           }
@@ -367,34 +426,37 @@ app.get("/createCertificate/:registration", async (req, res) => {
     // const base64String = buffer.toString('base64');
     // const dataUrl = `data:image/jpeg;base64,${base64String}`;
 
-    // doc.addImage(dataUrl, "JPEG", 440, 100, 80, 60);
+    // doc.addImage(dataUrl, "JPEG", 440, 100, 85, 60);
 
     // Add text fields to the PDF
     
     
     doc.setFontSize(14);
-    doc.text(`${registration}`, 70, 70);
-    doc.text(`${titleCase(name)}`, 220, 180);
-    doc.text(`${titleCase(fathersname)}`, 220, 205);
-    doc.text(`${titleCase(mothersname)}`, 220, 230);
-    doc.text(`${dob}`, 440, 230);
+    doc.text(`${registration}`, 70, 80);
+    doc.text(`${titleCase(name)}`, 220, 190);
+    doc.text(`${titleCase(fathersname)}`, 220, 215);
+    doc.text(`${titleCase(mothersname)}`, 220, 240);
+    doc.text(`${dob}`, 440, 240);
     doc.text(`${rollno}`, 145, 260);
     doc.text(`${erollno}`, 330, 260);
     doc.text(`${IssueSession}`, 440, 260);
-    doc.text(`${duration}`, 220, 280);
+    doc.text(`${duration}`, 220, 290);
     doc.text(`${titleCase(performance)}`, 345, 340);
 
     
     doc.setFont("helvetica", "bold");
-    doc.text(`${titleCase(cert)}`, 300,420,null,null,"center");
+    doc.text(`${titleCase(cert)}`, 300,430,null,null,"center");
 
     // Table Headers
-    const tableStartY = 460;
+    const tableStartY = 465;
+    const pageWidth = doc.internal.pageSize.width;
+    const rectangleWidth = 440; 
+    const x = (pageWidth - rectangleWidth) / 2; 
     doc.setFontSize(11);
     doc.setLineWidth(2);
-    doc.rect(75, tableStartY, 440, 15);
-    doc.text("S.NO", 80, tableStartY + 10);
-    doc.text("Subject", 115, tableStartY + 10);
+    doc.rect(x, tableStartY, rectangleWidth, 15);
+    doc.text("S.NO", 85, tableStartY + 10);
+    doc.text("Subject", 120, tableStartY + 10);
     doc.text("Total", 320, tableStartY + 10);
     doc.text("Theory", 355, tableStartY + 10);
     doc.text("Practical", 400, tableStartY + 10);
@@ -412,11 +474,11 @@ app.get("/createCertificate/:registration", async (req, res) => {
       const rowY = tableStartY + 15 + index * 15;
 
       // Draw border for each row
-      doc.rect(75, rowY, 440, 15);
+      doc.rect(x, rowY, rectangleWidth, 15);
 
       if(rows[index]!==undefined){
-        doc.text(`${index + 1}`, 80, rowY + 10);
-        doc.text(`${titleCase(rows[index].subject) || ""}`, 115, rowY + 10);
+        doc.text(`${index + 1}`, 85, rowY + 10);
+        doc.text(`${titleCase(rows[index].subject) || ""}`, 120, rowY + 10);
         doc.text(`100`, 320, rowY + 10);
         doc.text(`${rows[index].theory || ""}`, 355, rowY + 10);
         doc.text(`${rows[index].practical || ""}`, 400, rowY + 10);
@@ -428,8 +490,8 @@ app.get("/createCertificate/:registration", async (req, res) => {
         totalObtained += rows[index].obtained ? parseInt(rows[index].obtained, 10) : 0;
       }
 
-    //   doc.text(`${index + 1}`, 80, rowY + 10);
-    //   doc.text(`${row.subject}`, 115, rowY + 10);
+    //   doc.text(`${index + 1}`, 85, rowY + 10);
+    //   doc.text(`${row.subject}`, 120, rowY + 10);
     //   doc.text(`${row.theory}`, 320, rowY + 10);
     //   doc.text(`${row.practical}`, 400, rowY + 10);
     //   doc.text(`${row.obtained}`, 455, rowY + 10);
@@ -441,8 +503,8 @@ app.get("/createCertificate/:registration", async (req, res) => {
 
     // Add Total Row
     const totalRowY = tableStartY + 15 + maxRows * 15;
-    doc.rect(75, totalRowY, 440, 15);
-    doc.text("Total", 115, totalRowY + 10);
+    doc.rect(x, totalRowY, rectangleWidth, 15);
+    doc.text("Total", 120, totalRowY + 10);
     doc.text(`${maxMarks}`, 320, totalRowY + 10);
     doc.text(`${totalTheory}`, 355, totalRowY + 10);
     doc.text(`${totalPractical}`, 400, totalRowY + 10);
@@ -481,4 +543,3 @@ app.get("/createCertificate/:registration", async (req, res) => {
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
-

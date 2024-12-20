@@ -37,7 +37,8 @@ const AddStudents = () => {
     { name: 'Core Java', fee: 5000, duration: 6 },
     { name: 'Advance Java', fee: 7000, duration: 6 },
     { name: 'Python', fee: 6000, duration: 6 },
-    { name: 'Data Structure and Algorithms', fee: 6000, duration: 6 }
+    { name: 'Data Structure and Algorithms', fee: 6000, duration: 6 },
+    { name: 'Certificate Courses', fee: 2500, duration: 1 }
   ];
 
   useEffect(() => {

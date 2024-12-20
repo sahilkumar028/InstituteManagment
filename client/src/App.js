@@ -14,6 +14,8 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 
 import './index.css'; // Custom CSS for theme colors
 import Login from './components/Login';
+import EnquiryForm from './pages/EnquiryForm';
+import StudentTest from './pages/StudentTest';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -32,6 +34,8 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/AddStudents" element={<AddStudent />} />
+            <Route path="/StudentTest" element={<StudentTest />} />
+            <Route path="/EnquiryForm" element={<EnquiryForm />} />
             <Route path="/ListStudents" element={<ListStudents />} />
             <Route path="/IssuedCertificate" element={<IssuedCertificateDownloads />} />
             <Route path="/issued/:id" element={<IssuedCertificate />} />
