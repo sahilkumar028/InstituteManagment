@@ -12,7 +12,7 @@ const StudentList = () => {
         // Fetch students from API
         const fetchStudents = async () => {
             try {
-                const response = await axios.get('http://192.168.1.250:5000/api/students');
+                const response = await axios.get(process.env.REACT_APP_API+'/api/students');
                 setStudents(response.data);
             } catch (error) {
                 setError(error.message);
@@ -26,7 +26,7 @@ const StudentList = () => {
 
     const handleComplete = async (id) => {
         try {
-            await axios.put(`http://192.168.1.250:5000/api/students/${id}/complete`);
+            await axios.put(`${process.env.REACT_APP_API}/api/students/${id}/complete`);
             // Refresh the list or update the state
             setStudents(students.map(student =>
                 student._id === id ? { ...student, courseStatus: 'Complete' } : student
@@ -52,7 +52,7 @@ const StudentList = () => {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`http://192.168.1.250:5000/api/students/${id}`);
+            await axios.delete(`${process.env.REACT_APP_API}/api/students/${id}`);
             // Refresh the student list
             setStudents(students.filter(student => student._id !== id));
         } catch (error) {
@@ -99,7 +99,7 @@ const StudentList = () => {
                             <td>{index + 1}</td> {/* Serial number */}
                             <td>{student.regId}</td> {/* Registration number */}
                             <td>{new Date(student.date).toLocaleDateString()}</td>
-                            <td><img className='w-100 h-100' src={`http://192.168.1.250:5000/api/images/${student.photo}`} target="_blank"/></td>
+                            <td><img className='w-100 h-100' src={`${process.env.REACT_APP_API}/api/images/${student.photo}`} target="_blank"/></td>
                             <td>{student.name}</td>
                             <td>{student.fatherName}</td>
                             <td>{student.motherName}</td>

@@ -10,7 +10,7 @@ const IssuedCertificateDownloads = () => {
         // Fetch issued documents data
         const fetchIssuedDocuments = async () => {
             try {
-                const response = await axios.get('http://192.168.1.250:5000/api/issued');
+                const response = await axios.get(process.env.REACT_APP_API+'/api/issued');
                 setStudents(response.data);
             } catch (error) {
                 setError(error.message);

@@ -52,7 +52,7 @@ const EnquiryForm = () => {
     });
   
     try {
-      const response = await fetch('http://192.168.1.250:5000/add-enquiry', {
+      const response = await fetch(process.env.REACT_APP_API+'/add-enquiry', {
         method: 'POST',
         body: formData
       });

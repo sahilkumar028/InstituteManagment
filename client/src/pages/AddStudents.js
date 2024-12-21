@@ -119,7 +119,7 @@ const AddStudents = () => {
     });
 
     try {
-      const response = await fetch('http://192.168.1.250:5000/add-student', {
+      const response = await fetch(process.env.REACT_APP_API+'/add-student', {
         method: 'POST',
         body: formData
       });
