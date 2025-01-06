@@ -40,6 +40,9 @@ const Sidebar = ({ darkMode }) => {
             <li className="nav-item">
               <Link className={`nav-link ${location.pathname === '/StudentTest' ? 'active' : ''}`} to="/StudentTest">StudentTest</Link>
             </li>
+            <li className="nav-item">
+              <Link className={`nav-link ${location.pathname === '/ListOfStudentTest' ? 'active' : ''}`} to="/ListOfStudentTest">Student Test Records</Link>
+            </li>
           </ul>
         </div>
       </div>

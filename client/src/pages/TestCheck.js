@@ -1,91 +1,133 @@
-import React, { useState,useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from 'axios';
 
-function StudentTest() {
-  const [studentDetails, setStudentDetails] = useState(() => {
-    const savedData = localStorage.getItem('formData');
-    return savedData ? JSON.parse(savedData) : {
-      name: '',
-      batchTime: '',
-      teacherName: '',
-      answer: {
-        partA: { 
-          partAQ1:'',
-          partAQ2:'',
-          partAQ3:'',
-          partAQ4:'',
-          partAQ5:'',
-          partAQ6:'',
-          partAQ7:'',
-          partAQ8:'',
-          partAQ9:'',
-          partAQ10:'',
-        },
-        partB: {
-          a:''
-        },
-        partC: {
-          a:''
-        },
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+
+
+function TestCheck() {
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { id } = useParams(); // Get the student ID from the URL
+  
+  const [marks, setMarks] = useState({
+    name: "",
+    batchTime: "",
+    teacherName: "",
+    marks: {
+      partA: {
+  
       },
-    };
+      partB: {
+  
+      },
+      partC: {
+  
+      }
+    },
   });
-
-  // Save form data to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('formData', JSON.stringify(studentDetails));
-  }, [studentDetails]);
-
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    
-    // Update simple fields (name, batchTime, teacherName)
-    if (name === 'name' || name === 'batchTime' || name === 'teacherName') {
-      setStudentDetails((prevDetails) => ({
-        ...prevDetails,
-        [name]: value,
-      }));
-    } else {
-      // For nested fields (answers in parts A, B, C)
-      setStudentDetails((prevDetails) => ({
-        ...prevDetails,
-        answer: {
-          ...prevDetails.answer,
-          partA: name.startsWith('partA') ? {
-            ...prevDetails.answer.partA,
-            [name]: value,
-          } : prevDetails.answer.partA,
-          
-          partB: name.startsWith('partB') ? {
-            ...prevDetails.answer.partB,
-            [name]: value,
-          } : prevDetails.answer.partB,
-          
-          partC: name.startsWith('partC') ? {
-            ...prevDetails.answer.partC,
-            [name]: value,
-          } : prevDetails.answer.partC,
-        },
-      }));
-    }
+  const partACorrectAnswer = {
+    partAQ1: 'F11',
+    partAQ2: 'Sales Voucher',
+    partAQ3: 'D (while in Gateway of Tally)',
+    partAQ4: 'Creates a master (e.g., Ledger or Stock Item)',
+    partAQ5: 'Outstanding Report',
+    partAQ6: 'Statutory & Taxation',
+    partAQ7: 'F11',
+    partAQ8: 'To record cash or bank transactions within the business',
+    partAQ9: 'Profit & Loss Account',
+    partAQ10: 'Gateway of Tally > Accounts Info',
   };
-
+  
+  //   const handleChange = (event) => {
+  //     const { name, value } = event.target;
+  //     if (name === 'name' || name === 'batchTime' || name === 'teacherName') {
+  //       // For simple fields like name, batchTime, and teacherName
+  //       setStudentDetails((prevDetails) => ({
+  //         ...prevDetails,
+  //         [name]: value, // Directly update the corresponding simple field
+  //       }));
+  //     } else {
+  //     // Determine which part (A, B, or C) the question belongs to based on the `name` attribute
+  //     setStudentDetails((prevDetails) => ({
+  //       ...prevDetails,
+  //       answer: {
+  //         ...prevDetails.answer,
+  //         // Dynamically select which part (A, B, or C) to update based on the question's name
+  //         partA: name.startsWith('partA') ? {
+  //           ...prevDetails.answer.partA,
+  //           [name]: value,  // Update the specific question in partA
+  //         } : prevDetails.answer.partA,
+  
+  //         partB: name.startsWith('partB') ? {
+  //           ...prevDetails.answer.partB,
+  //           [name]: value,  // Update the specific question in partB
+  //         } : prevDetails.answer.partB,
+  
+  //         partC: name.startsWith('partC') ? {
+  //           ...prevDetails.answer.partC,
+  //           [name]: value,  // Update the specific question in partC
+  //         } : prevDetails.answer.partC,
+  //       },
+  //     }));
+  //   }
+  //     console.log(studentDetails);  // This logs the updated state after change
+  //   };
+  
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    try {
-      // Sending data to the server
-      const response = await axios.post(process.env.REACT_APP_API + '/studentTest', studentDetails);
-
-      // Handle successful response
-      console.log("Test Submitted:", response.data); 
-      alert("Test Submitted Successfully!");
-    } catch (error) {
-      console.error("Error:", error);
-      alert("There was an error submitting the test. Please try again.");
-    }
+  
+    // try {
+    //   // Sending data to the server
+    //   const response = await axios.post(process.env.REACT_APP_API+'/TestCheck', studentDetails);
+  
+    //   // Handle successful response
+    //   console.log("Test Submitted:", response.data); // Log response data if necessary
+    //   alert("Test Submitted Successfully!"); // Alert success message
+    // } catch (error) {
+    //   console.error("Error:", error); // Log any error that occurs
+    //   alert("There was an error submitting the test. Please try again.");
+    // }
   };
+  
+  
+  
+  useEffect(() => {
+    // Fetch student details from API
+    const fetchStudent = async () => {
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_API}/api/studentTest/${id}`);
+        setStudent(response.data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchStudent();
+  }, [id]);
+  
+  const calculateMarks = (studentAnswers) => {
+    let totalMarks = 0;
+    // Iterate through each part (question)
+    Object.keys(partACorrectAnswer).forEach((key) => {
+      if (studentAnswers[key] === partACorrectAnswer[key]) {
+        totalMarks += 1; // Add 1 mark for each correct answer
+      }
+    });
+    return totalMarks; // Return total marks
+  };
+  
+
+  
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!student) return <div>No student found</div>;
+
   return (
     <div className="container mt-4">
       <h2 className="text-center mb-4">Student Test</h2>
@@ -96,9 +138,8 @@ function StudentTest() {
             type="text"
             className="form-control"
             name="name"
-            value={studentDetails.name}
-            onChange={handleChange}
-            required
+            value={student.name}
+            disabled
           />
         </div>
 
@@ -108,10 +149,9 @@ function StudentTest() {
             type="text"
             className="form-control"
             name="batchTime"
-            value={studentDetails.batchTime}
-            onChange={handleChange}
+            value={student.batchTime}
             placeholder="e.g., 10:00 AM - 11:30 AM"
-            required
+            disabled
           />
         </div>
 
@@ -121,9 +161,8 @@ function StudentTest() {
             type="text"
             className="form-control"
             name="teacherName"
-            value={studentDetails.teacherName}
-            onChange={handleChange}
-            required
+            value={student.teacherName}
+            disabled
           />
         </div>
         <div className="text-center mb-4">
@@ -136,48 +175,12 @@ function StudentTest() {
         <div className="mb-4">
           <h5>1. What is the default Gateway of Tally shortcut key?</h5>
           <div className="form-check">
-            <input
-              type="radio"
-              className="form-check-input"
-              name="partAQ1"
-              value="F11"
-              checked={studentDetails.answer.partA.partAQ1 === 'F11'}
-              onChange={handleChange}
-            />
-            <label className="form-check-label">a) F11</label>
-          </div>
-          <div className="form-check">
-            <input
-              type="radio"
-              className="form-check-input"
-              name="partAQ1"
-              value="F12"
-              checked={studentDetails.answer.partA.partAQ1 === 'F12'}
-              onChange={handleChange}
-            />
-            <label className="form-check-label">b) F12</label>
-          </div>
-          <div className="form-check">
-            <input
-              type="radio"
-              className="form-check-input"
-              name="partAQ1"
-              value="Alt + F3"
-              checked={studentDetails.answer.partA.partAQ1 === 'Alt + F3'}
-              onChange={handleChange}
-            />
-            <label className="form-check-label">c) Alt + F3</label>
-          </div>
-          <div className="form-check">
-            <input
-              type="radio"
-              className="form-check-input"
-              name="partAQ1"
-              value="Alt + F1"
-              checked={studentDetails.answer.partA.partAQ1 === 'Alt + F1'}
-              onChange={handleChange}
-            />
-            <label className="form-check-label">d) Alt + F1</label>
+              <p>Your answer: {student.answer.partA.partAQ1}</p>
+              <p>Correct answer: {partACorrectAnswer.partAQ1}</p>
+              <p style={{ color: student.answer.partA.partAQ1===partACorrectAnswer.partAQ1 ? 'green' : 'red' }}>
+                {student.answer.partA.partAQ1===
+                partACorrectAnswer.partAQ1 ? 'Correct' : 'Incorrect'}
+              </p>
           </div>
         </div>
 
@@ -186,44 +189,44 @@ function StudentTest() {
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ2"
               value="Purchase Voucher"
-              checked={studentDetails.answer.partA.partAQ2 === 'Purchase Voucher'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ2 === 'Purchase Voucher'}
             />
             <label className="form-check-label">a) Purchase Voucher</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ2"
               value="Sales Voucher"
-              checked={studentDetails.answer.partA.partAQ2 === 'Sales Voucher'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ2 === 'Sales Voucher'}
             />
             <label className="form-check-label">b) Sales Voucher</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ2"
               value="Payment Voucher"
-              checked={studentDetails.answer.partA.partAQ2 === 'Payment Voucher'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ2 === 'Payment Voucher'}
             />
             <label className="form-check-label">c) Payment Voucher</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ2"
               value="Receipt Voucher"
-              checked={studentDetails.answer.partA.partAQ2 === 'Receipt Voucher'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ2 === 'Receipt Voucher'}
             />
             <label className="form-check-label">d) Receipt Voucher</label>
           </div>
@@ -234,44 +237,44 @@ function StudentTest() {
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ3"
               value="Double Click on D"
-              checked={studentDetails.answer.partA.partAQ3 === 'Double Click on D'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ3 === 'Double Click on D'}
             />
             <label className="form-check-label">a) Double Click on D</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ3"
               value="Ctrl + F4"
-              checked={studentDetails.answer.partA.partAQ3 === 'Ctrl + F4'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ3 === 'Ctrl + F4'}
             />
             <label className="form-check-label">b) Ctrl + F4</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ3"
               value="D (while in Gateway of Tally)"
-              checked={studentDetails.answer.partA.partAQ3 === 'D (while in Gateway of Tally)'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ3 === 'D (while in Gateway of Tally)'}
             />
             <label className="form-check-label">c) D (while in Gateway of Tally)</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ3"
               value="Alt + F5"
-              checked={studentDetails.answer.partA.partAQ3 === 'Alt + F5'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ3 === 'Alt + F5'}
             />
             <label className="form-check-label">d) Alt + F5</label>
           </div>
@@ -282,44 +285,44 @@ function StudentTest() {
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ4"
               value="Creates a new company"
-              checked={studentDetails.answer.partA.partAQ4 === 'Creates a new company'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ4 === 'Creates a new company'}
             />
             <label className="form-check-label">a) Creates a new company</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ4"
               value="Opens the Company menu"
-              checked={studentDetails.answer.partA.partAQ4 === 'Opens the Company menu'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ4 === 'Opens the Company menu'}
             />
             <label className="form-check-label">b) Opens the Company menu</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ4"
               value="Creates a master (e.g., Ledger or Stock Item)"
-              checked={studentDetails.answer.partA.partAQ4 === 'Creates a master (e.g., Ledger or Stock Item)'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ4 === 'Creates a master (e.g., Ledger or Stock Item)'}
             />
             <label className="form-check-label">c) Creates a master (e.g., Ledger or Stock Item)</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ4"
               value="Copies a transaction"
-              checked={studentDetails.answer.partA.partAQ4 === 'Copies a transaction'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ4 === 'Copies a transaction'}
             />
             <label className="form-check-label">d) Copies a transaction</label>
           </div>
@@ -330,44 +333,44 @@ function StudentTest() {
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ5"
               value="Stock Summary"
-              checked={studentDetails.answer.partA.partAQ5 === 'Stock Summary'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ5 === 'Stock Summary'}
             />
             <label className="form-check-label">a) Stock Summary</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ5"
               value="Profit and Loss Account"
-              checked={studentDetails.answer.partA.partAQ5 === 'Profit and Loss Account'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ5 === 'Profit and Loss Account'}
             />
             <label className="form-check-label">b) Profit and Loss Account</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ5"
               value="Balance Sheet"
-              checked={studentDetails.answer.partA.partAQ5 === 'Balance Sheet'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ5 === 'Balance Sheet'}
             />
             <label className="form-check-label">c) Balance Sheet</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ5"
               value="Outstanding Report"
-              checked={studentDetails.answer.partA.partAQ5 === 'Outstanding Report'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ5 === 'Outstanding Report'}
             />
             <label className="form-check-label">d) Outstanding Report</label>
           </div>
@@ -378,44 +381,44 @@ function StudentTest() {
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ6"
               value="Inventory Features"
-              checked={studentDetails.answer.partA.partAQ6 === 'Inventory Features'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ6 === 'Inventory Features'}
             />
             <label className="form-check-label">a) Inventory Features</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ6"
               value="Statutory & Taxation"
-              checked={studentDetails.answer.partA.partAQ6 === 'Statutory & Taxation'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ6 === 'Statutory & Taxation'}
             />
             <label className="form-check-label">b) Statutory & Taxation</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ6"
               value="Accounting Features"
-              checked={studentDetails.answer.partA.partAQ6 === 'Accounting Features'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ6 === 'Accounting Features'}
             />
             <label className="form-check-label">c) Accounting Features</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ6"
               value="Payroll Features"
-              checked={studentDetails.answer.partA.partAQ6 === 'Payroll Features'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ6 === 'Payroll Features'}
             />
             <label className="form-check-label">d) Payroll Features</label>
           </div>
@@ -426,44 +429,44 @@ function StudentTest() {
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ7"
               value="F11"
-              checked={studentDetails.answer.partA.partAQ7 === 'F11'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ7 === 'F11'}
             />
             <label className="form-check-label">a) F11</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ7"
               value="F12"
-              checked={studentDetails.answer.partA.partAQ7 === 'F12'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ7 === 'F12'}
             />
             <label className="form-check-label">b) F12</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ7"
               value="Alt + F1"
-              checked={studentDetails.answer.partA.partAQ7 === 'Alt + F1'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ7 === 'Alt + F1'}
             />
             <label className="form-check-label">c) Alt + F1</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ7"
               value="Ctrl + A"
-              checked={studentDetails.answer.partA.partAQ7 === 'Ctrl + A'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ7 === 'Ctrl + A'}
             />
             <label className="form-check-label">d) Ctrl + A</label>
           </div>
@@ -474,44 +477,44 @@ function StudentTest() {
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ8"
               value="To record cash or bank transactions within the business"
-              checked={studentDetails.answer.partA.partAQ8 === 'To record cash or bank transactions within the business'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ8 === 'To record cash or bank transactions within the business'}
             />
             <label className="form-check-label">a) To record cash or bank transactions within the business</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ8"
               value="To record purchases on credit"
-              checked={studentDetails.answer.partA.partAQ8 === 'To record purchases on credit'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ8 === 'To record purchases on credit'}
             />
             <label className="form-check-label">b) To record purchases on credit</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ8"
               value="To record sales on credit"
-              checked={studentDetails.answer.partA.partAQ8 === 'To record sales on credit'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ8 === 'To record sales on credit'}
             />
             <label className="form-check-label">c) To record sales on credit</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ8"
               value="To record GST payments"
-              checked={studentDetails.answer.partA.partAQ8 === 'To record GST payments'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ8 === 'To record GST payments'}
             />
             <label className="form-check-label">d) To record GST payments</label>
           </div>
@@ -522,44 +525,44 @@ function StudentTest() {
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ9"
               value="Balance Sheet"
-              checked={studentDetails.answer.partA.partAQ9 === 'Balance Sheet'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ9 === 'Balance Sheet'}
             />
             <label className="form-check-label">a) Balance Sheet</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ9"
               value="Stock Summary"
-              checked={studentDetails.answer.partA.partAQ9 === 'Stock Summary'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ9 === 'Stock Summary'}
             />
             <label className="form-check-label">b) Stock Summary</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ9"
               value="Profit & Loss Account"
-              checked={studentDetails.answer.partA.partAQ9 === 'Profit & Loss Account'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ9 === 'Profit & Loss Account'}
             />
             <label className="form-check-label">c) Profit & Loss Account</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ9"
               value="Daybook"
-              checked={studentDetails.answer.partA.partAQ9 === 'Daybook'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ9 === 'Daybook'}
             />
             <label className="form-check-label">d) Daybook</label>
           </div>
@@ -570,48 +573,49 @@ function StudentTest() {
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ10"
               value="Display Menu"
-              checked={studentDetails.answer.partA.partAQ10 === 'Display Menu'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ10 === 'Display Menu'}
             />
             <label className="form-check-label">a) Display Menu</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ10"
               value="Gateway of Tally > Accounts Info"
-              checked={studentDetails.answer.partA.partAQ10 === 'Gateway of Tally > Accounts Info'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ10 === 'Gateway of Tally > Accounts Info'}
             />
             <label className="form-check-label">b) Gateway of Tally  Accounts Info</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ10"
               value="Chart of Accounts"
-              checked={studentDetails.answer.partA.partAQ10 === 'Chart of Accounts'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ10 === 'Chart of Accounts'}
             />
             <label className="form-check-label">c) Chart of Accounts</label>
           </div>
           <div className="form-check">
             <input
               type="radio"
+              disabled
               className="form-check-input"
               name="partAQ10"
               value="Statutory Features"
-              checked={studentDetails.answer.partA.partAQ10 === 'Statutory Features'}
-              onChange={handleChange}
+              checked={student.answer.partA.partAQ10 === 'Statutory Features'}
             />
             <label className="form-check-label">d) Statutory Features</label>
           </div>
         </div>
+        {calculateMarks(student.answer.partA)}
         <div className="mb-4">
           <h4>Part B: Practical Questions (10 x 2 = 20 Marks)</h4>
 
@@ -628,11 +632,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ1"
-              value={studentDetails.answer.partB.partBQ1}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ1}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -649,11 +652,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ2"
-              value={studentDetails.answer.partB.partBQ2}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ2}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -667,11 +669,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ3"
-              value={studentDetails.answer.partB.partBQ3}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ3}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -685,11 +686,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ4"
-              value={studentDetails.answer.partB.partBQ4}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ4}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -703,11 +703,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ5"
-              value={studentDetails.answer.partB.partBQ5}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ5}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -725,11 +724,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ6"
-              value={studentDetails.answer.partB.partBQ6}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ6}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -744,11 +742,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ7"
-              value={studentDetails.answer.partB.partBQ7}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ7}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -769,11 +766,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ8"
-              value={studentDetails.answer.partB.partBQ8}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ8}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -794,11 +790,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ9"
-              value={studentDetails.answer.partB.partBQ9}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ9}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -811,11 +806,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partBQ10"
-              value={studentDetails.answer.partB.partBQ10}
-              onChange={handleChange}
+              value={student.answer.partB.partBQ10}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
         </div>
@@ -828,11 +822,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partCQ1"
-              value={studentDetails.answer.partC.partCQ1}
-              onChange={handleChange}
+              value={student.answer.partC.partCQ1}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -842,11 +835,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partCQ2"
-              value={studentDetails.answer.partC.partCQ2}
-              onChange={handleChange}
+              value={student.answer.partC.partCQ2}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -856,11 +848,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partCQ3"
-              value={studentDetails.answer.partC.partCQ3}
-              onChange={handleChange}
+              value={student.answer.partC.partCQ3}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -870,11 +861,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partCQ4"
-              value={studentDetails.answer.partC.partCQ4}
-              onChange={handleChange}
+              value={student.answer.partC.partCQ4}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -884,11 +874,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partCQ5"
-              value={studentDetails.answer.partC.partCQ5}
-              onChange={handleChange}
+              value={student.answer.partC.partCQ5}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -898,11 +887,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partCQ6"
-              value={studentDetails.answer.partC.partCQ6}
-              onChange={handleChange}
+              value={student.answer.partC.partCQ6}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -912,11 +900,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partCQ7"
-              value={studentDetails.answer.partC.partCQ7}
-              onChange={handleChange}
+              value={student.answer.partC.partCQ7}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
 
@@ -926,11 +913,10 @@ function StudentTest() {
             <textarea
               className="form-control"
               name="partCQ8"
-              value={studentDetails.answer.partC.partCQ8}
-              onChange={handleChange}
+              value={student.answer.partC.partCQ8}
               placeholder="Write your answer here..."
               rows="4"
-              required
+              disabled
             />
           </div>
         </div>
@@ -942,4 +928,4 @@ function StudentTest() {
   );
 }
 
-export default StudentTest;
+export default TestCheck;

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 const AddStudents = () => {
-  const [studentData, setStudentData] = useState({
+  const [studentData, setStudentData] = useState(() => {
+    const savedData = localStorage.getItem('studentData');
+    return savedData ? JSON.parse(savedData) : {
     date: '',
     name: '',
     fatherName: '',
@@ -19,7 +21,11 @@ const AddStudents = () => {
     marksheet: null,
     aadhaar: null,
     reference: ''
-  });
+  }});
+    useEffect(() => {
+      localStorage.setItem('studentData', JSON.stringify(studentData));
+    }, [studentData]);
+  
 
   const [registrationId, setRegistrationId] = useState(null);
 
@@ -43,20 +49,24 @@ const AddStudents = () => {
 
   useEffect(() => {
     const today = new Date();
-    const oneWeekBack = new Date(today);
-    oneWeekBack.setDate(today.getDate() - 7);
-
+    const sixMonthsBack = new Date(today);
+    sixMonthsBack.setMonth(today.getMonth() - 6);
+  
     const formattedToday = today.toISOString().split('T')[0];
-    const formattedOneWeekBack = oneWeekBack.toISOString().split('T')[0];
-
+    const formattedSixMonthsBack = sixMonthsBack.toISOString().split('T')[0];
+  
     setStudentData(prevData => ({
       ...prevData,
-      date: formattedToday
+      date: formattedToday, // Set the default to today's date
     }));
-
-    document.getElementById('date').setAttribute('min', formattedOneWeekBack);
-    document.getElementById('date').setAttribute('max', formattedToday);
+  
+    const dateInput = document.getElementById('date');
+    if (dateInput) {
+      dateInput.setAttribute('min', formattedSixMonthsBack);
+      dateInput.setAttribute('max', formattedToday);
+    }
   }, []);
+  
 
   useEffect(() => {
     const selectedCourse = courses.find(course => course.name === studentData.course);

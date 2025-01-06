@@ -9,7 +9,7 @@ const { MongoClient } = require('mongodb');
 
 const { jsPDF } = require("jspdf");
 const fs = require('fs');
-const QRCode = require('qrcode'); 
+const QRCode = require('qrcode');
 
 const client = new MongoClient('mongodb://127.0.0.1:27017');
 const dbName = 'institute';
@@ -28,7 +28,7 @@ mongoose.connect(studentDbUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 }).then(() => console.log('MongoDB connected for student data'))
-  .catch(err => console.error('MongoDB connection error:', err));
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // Set up storage for multer
 const storage = multer.diskStorage({
@@ -60,7 +60,7 @@ app.post('/add-student', upload.fields([
         const photoPath = files['photo'] ? files['photo'][0].filename : null;
         const marksheetPath = files['marksheet'] ? files['marksheet'][0].filename : null;
         const aadhaarPath = files['aadhaar'] ? files['aadhaar'][0].filename : null;
-        
+
         const student = new Student({
             date: new Date(date),
             name,
@@ -170,7 +170,7 @@ app.put('/api/students/:id/complete', async (req, res) => {
 
         student.courseStatus = 'Complete'; // Add or update the field as needed
         await student.save();
-        
+
         res.status(200).json({ message: 'Course status updated to Complete', student });
     } catch (error) {
         res.status(500).json({ message: 'Failed to update course status', error });
@@ -266,7 +266,7 @@ app.get('/api/issued', async (req, res) => {
         } finally {
             await formClient.close();
         }
-        
+
     } catch (error) {
         res.status(500).json({ message: 'Failed to retrieve issued certificate', error });
     }
@@ -309,235 +309,290 @@ app.delete("/deletedata/registration/:registration", async (req, res) => {
 
 function titleCase(s) {
     return s.toLowerCase()
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 }
 
 async function generateQRCode(qrData, qrOptions) {
     return new Promise((resolve, reject) => {
-      QRCode.toDataURL(JSON.stringify(qrData), qrOptions, (err, qrDataUrl) => {
-        if (err) {
-          reject('Error generating QR code: ' + err);
-        } else {
-          resolve(qrDataUrl);
-        }
-      });
+        QRCode.toDataURL(JSON.stringify(qrData), qrOptions, (err, qrDataUrl) => {
+            if (err) {
+                reject('Error generating QR code: ' + err);
+            } else {
+                resolve(qrDataUrl);
+            }
+        });
     });
-  }
+}
 
 app.get("/createCertificate/:registration", async (req, res) => {
-  try {
-    // Connect to the database
-    await client.connect();
-    const db = client.db(dbName);
-    const collection = db.collection('result');  // Change collection name if needed
+    try {
+        // Connect to the database
+        await client.connect();
+        const db = client.db(dbName);
+        const collection = db.collection('result');  // Change collection name if needed
 
-    // Fetch student data by registration number
-    const certificate = await collection.findOne({ registration: req.params.registration });
+        // Fetch student data by registration number
+        const certificate = await collection.findOne({ registration: req.params.registration });
 
-    if (!certificate) {
-      return res.status(404).send("Certificate not found");
-    }
+        if (!certificate) {
+            return res.status(404).send("Certificate not found");
+        }
 
-    // Extract student details
-    const {
-        registration,
-        name,
-        fathersname,
-        mothersname,
-        dob,
-        rollno,
-        erollno,
-        IssueSession,
-        duration,
-        performance,
-        certificate: cert,
-        Grade,
-        IssueDay,
-        IssueMonth,
-        IssueYear,
-        rows,
-        photo
-      } = certificate;
-  
-      // Create the PDF document
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'a4',
-      });
+        // Extract student details
+        const {
+            registration,
+            name,
+            fathersname,
+            mothersname,
+            dob,
+            rollno,
+            erollno,
+            IssueSession,
+            duration,
+            performance,
+            certificate: cert,
+            Grade,
+            IssueDay,
+            IssueMonth,
+            IssueYear,
+            rows,
+            photo
+        } = certificate;
 
-      const qrData = {
-        registration,
-        name,
-        rollno,
-        erollno,
-        IssueSession,
-        duration,
-        performance,
-        Grade,
-        IssueDay,
-        IssueMonth,
-        IssueYear
-      }; // Customize this data to include in the QR code
+        // Create the PDF document
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'pt',
+            format: 'a4',
+        });
 
-      
-      const qrOptions = {
-        errorCorrectionLevel: 'H', // High error correction level for better quality
-        type: 'image/jpeg', // Set the type to jpeg
-        width: 200, // Set QR code size
-        margin: 2 // Set margin around the QR code
-      };
-  
-      // Read and convert the student's photo to base64
-      const filename = photo.split('/').pop();
-      const filePath = 'uploads/' + filename;
-      
-      // Check if the file exists and is a file (not a directory)
-      try {
-          const stats = fs.lstatSync(filePath); // Get file stats
-  
-          if (stats.isFile()) {
-              // Read the file and convert it to base64
-              const buffer = fs.readFileSync(filePath);
-              const base64String = buffer.toString('base64');
-              const dataUrl = `data:image/jpeg;base64,${base64String}`;
-              
-              const qrDataUrl = await generateQRCode(qrData, qrOptions); // Wait for QR code generation
-              console.log('QR Code Data URL:', qrDataUrl);
-        
-              // Add the QR code to the PDF
-              doc.addImage(qrDataUrl, 'JPEG', 100, 100, 85, 80)
+        const qrData = {
+            registration,
+            name,
+            rollno,
+            erollno,
+            IssueSession,
+            duration,
+            performance,
+            Grade,
+            IssueDay,
+            IssueMonth,
+            IssueYear
+        }; // Customize this data to include in the QR code
 
-              // Add the image to the document
-              doc.addImage(dataUrl, "JPEG", 440, 100, 85, 70);
-          } else {
-              console.log(`The path ${filePath} is not a file.`);
-          }
-      } catch (error) {
-          console.log(`File not found or error reading the file: ${filePath}`);
-          console.error(error);
-          // Handle the error appropriately
-      }
-    // previwes code
-    // const filename = photo.split('/').pop();
-    // const buffer = fs.readFileSync('uploads/'+filename);
-    // const base64String = buffer.toString('base64');
-    // const dataUrl = `data:image/jpeg;base64,${base64String}`;
 
-    // doc.addImage(dataUrl, "JPEG", 440, 100, 85, 60);
+        const qrOptions = {
+            errorCorrectionLevel: 'H', // High error correction level for better quality
+            type: 'image/jpeg', // Set the type to jpeg
+            width: 200, // Set QR code size
+            margin: 2 // Set margin around the QR code
+        };
 
-    // Add text fields to the PDF
-    
-    
-    doc.setFontSize(14);
-    doc.text(`${registration}`, 70, 80);
-    doc.text(`${titleCase(name)}`, 220, 190);
-    doc.text(`${titleCase(fathersname)}`, 220, 215);
-    doc.text(`${titleCase(mothersname)}`, 220, 240);
-    doc.text(`${dob}`, 440, 240);
-    doc.text(`${rollno}`, 145, 260);
-    doc.text(`${erollno}`, 330, 260);
-    doc.text(`${IssueSession}`, 440, 260);
-    doc.text(`${duration}`, 220, 290);
-    doc.text(`${titleCase(performance)}`, 345, 340);
+        // Read and convert the student's photo to base64
+        const filename = photo.split('/').pop();
+        const filePath = 'uploads/' + filename;
 
-    
-    doc.setFont("helvetica", "bold");
-    doc.text(`${titleCase(cert)}`, 300,430,null,null,"center");
+        // Check if the file exists and is a file (not a directory)
+        try {
+            const stats = fs.lstatSync(filePath); // Get file stats
 
-    // Table Headers
-    const tableStartY = 465;
-    const pageWidth = doc.internal.pageSize.width;
-    const rectangleWidth = 440; 
-    const x = (pageWidth - rectangleWidth) / 2; 
-    doc.setFontSize(11);
-    doc.setLineWidth(2);
-    doc.rect(x, tableStartY, rectangleWidth, 15);
-    doc.text("S.NO", 85, tableStartY + 10);
-    doc.text("Subject", 120, tableStartY + 10);
-    doc.text("Total", 320, tableStartY + 10);
-    doc.text("Theory", 355, tableStartY + 10);
-    doc.text("Practical", 400, tableStartY + 10);
-    doc.text("Obtained", 455, tableStartY + 10);
+            if (stats.isFile()) {
+                // Read the file and convert it to base64
+                const buffer = fs.readFileSync(filePath);
+                const base64String = buffer.toString('base64');
+                const dataUrl = `data:image/jpeg;base64,${base64String}`;
 
-    // Add Rows
-    let totalTheory = 0;
-    let totalPractical = 0;
-    let totalObtained = 0;
-    const maxRows = 6;
-    let maxMarks=0;
-    doc.setFont("times", "normal");
+                const qrDataUrl = await generateQRCode(qrData, qrOptions); // Wait for QR code generation
+                console.log('QR Code Data URL:', qrDataUrl);
 
-    for (let index = 0; index < maxRows; index++) {
-      const rowY = tableStartY + 15 + index * 15;
+                // Add the QR code to the PDF
+                doc.addImage(qrDataUrl, 'JPEG', 100, 100, 85, 80)
 
-      // Draw border for each row
-      doc.rect(x, rowY, rectangleWidth, 15);
+                // Add the image to the document
+                doc.addImage(dataUrl, "JPEG", 440, 100, 85, 70);
+            } else {
+                console.log(`The path ${filePath} is not a file.`);
+            }
+        } catch (error) {
+            console.log(`File not found or error reading the file: ${filePath}`);
+            console.error(error);
+            // Handle the error appropriately
+        }
+        // previwes code
+        // const filename = photo.split('/').pop();
+        // const buffer = fs.readFileSync('uploads/'+filename);
+        // const base64String = buffer.toString('base64');
+        // const dataUrl = `data:image/jpeg;base64,${base64String}`;
 
-      if(rows[index]!==undefined){
-        doc.text(`${index + 1}`, 85, rowY + 10);
-        doc.text(`${titleCase(rows[index].subject) || ""}`, 120, rowY + 10);
-        doc.text(`100`, 320, rowY + 10);
-        doc.text(`${rows[index].theory || ""}`, 355, rowY + 10);
-        doc.text(`${rows[index].practical || ""}`, 400, rowY + 10);
-        doc.text(`${rows[index].obtained || ""}`, 455, rowY + 10);
+        // doc.addImage(dataUrl, "JPEG", 440, 100, 85, 60);
 
-        maxMarks += 100;
-        totalTheory += rows[index].theory ? parseInt(rows[index].theory, 10) : 0;
-        totalPractical += rows[index].practical ? parseInt(rows[index].practical, 10) : 0;
-        totalObtained += rows[index].obtained ? parseInt(rows[index].obtained, 10) : 0;
-      }
+        // Add text fields to the PDF
 
-    //   doc.text(`${index + 1}`, 85, rowY + 10);
-    //   doc.text(`${row.subject}`, 120, rowY + 10);
-    //   doc.text(`${row.theory}`, 320, rowY + 10);
-    //   doc.text(`${row.practical}`, 400, rowY + 10);
-    //   doc.text(`${row.obtained}`, 455, rowY + 10);
 
-    //   totalTheory += parseInt(row.theory, 10);
-    //   totalPractical += parseInt(row.practical, 10);
-    //   totalObtained += parseInt(row.obtained, 10);
-    }
+        doc.setFontSize(14);
+        doc.text(`${registration}`, 70, 80);
+        doc.text(`${titleCase(name)}`, 220, 190);
+        doc.text(`${titleCase(fathersname)}`, 220, 215);
+        doc.text(`${titleCase(mothersname)}`, 220, 240);
+        doc.text(`${dob}`, 440, 240);
+        doc.text(`${rollno}`, 145, 260);
+        doc.text(`${erollno}`, 330, 260);
+        doc.text(`${IssueSession}`, 440, 260);
+        doc.text(`${duration}`, 220, 290);
+        doc.text(`${titleCase(performance)}`, 345, 340);
 
-    // Add Total Row
-    const totalRowY = tableStartY + 15 + maxRows * 15;
-    doc.rect(x, totalRowY, rectangleWidth, 15);
-    doc.text("Total", 120, totalRowY + 10);
-    doc.text(`${maxMarks}`, 320, totalRowY + 10);
-    doc.text(`${totalTheory}`, 355, totalRowY + 10);
-    doc.text(`${totalPractical}`, 400, totalRowY + 10);
-    doc.text(`${totalObtained}`, 455, totalRowY + 10);
 
-    // Add Issue Details
-    doc.setFontSize(16);
-    doc.text(`${Grade}`, 240, 610);
-    doc.text(`${IssueDay}`, 240, 635);
-    doc.text(` ${titleCase(IssueMonth)} ${IssueYear}`, 355, 635);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${titleCase(cert)}`, 300, 430, null, null, "center");
 
-    // Save PDF to a file and send it to the user
-    const pdfPath = `./uploads/certificate_${registration}.pdf`;
-    doc.save(pdfPath);
+        // Table Headers
+        const tableStartY = 465;
+        const pageWidth = doc.internal.pageSize.width;
+        const rectangleWidth = 440;
+        const x = (pageWidth - rectangleWidth) / 2;
+        doc.setFontSize(11);
+        doc.setLineWidth(2);
+        doc.rect(x, tableStartY, rectangleWidth, 15);
+        doc.text("S.NO", 85, tableStartY + 10);
+        doc.text("Subject", 120, tableStartY + 10);
+        doc.text("Total", 320, tableStartY + 10);
+        doc.text("Theory", 355, tableStartY + 10);
+        doc.text("Practical", 400, tableStartY + 10);
+        doc.text("Obtained", 455, tableStartY + 10);
 
-    // Send the generated PDF to the client
-    res.sendFile(path.resolve(pdfPath), (err) => {
-      if (err) {
+        // Add Rows
+        let totalTheory = 0;
+        let totalPractical = 0;
+        let totalObtained = 0;
+        const maxRows = 6;
+        let maxMarks = 0;
+        doc.setFont("times", "normal");
+
+        for (let index = 0; index < maxRows; index++) {
+            const rowY = tableStartY + 15 + index * 15;
+
+            // Draw border for each row
+            doc.rect(x, rowY, rectangleWidth, 15);
+
+            if (rows[index] !== undefined) {
+                doc.text(`${index + 1}`, 85, rowY + 10);
+                doc.text(`${titleCase(rows[index].subject) || ""}`, 120, rowY + 10);
+                doc.text(`100`, 320, rowY + 10);
+                doc.text(`${rows[index].theory || ""}`, 355, rowY + 10);
+                doc.text(`${rows[index].practical || ""}`, 400, rowY + 10);
+                doc.text(`${rows[index].obtained || ""}`, 455, rowY + 10);
+
+                maxMarks += 100;
+                totalTheory += rows[index].theory ? parseInt(rows[index].theory, 10) : 0;
+                totalPractical += rows[index].practical ? parseInt(rows[index].practical, 10) : 0;
+                totalObtained += rows[index].obtained ? parseInt(rows[index].obtained, 10) : 0;
+            }
+
+            //   doc.text(`${index + 1}`, 85, rowY + 10);
+            //   doc.text(`${row.subject}`, 120, rowY + 10);
+            //   doc.text(`${row.theory}`, 320, rowY + 10);
+            //   doc.text(`${row.practical}`, 400, rowY + 10);
+            //   doc.text(`${row.obtained}`, 455, rowY + 10);
+
+            //   totalTheory += parseInt(row.theory, 10);
+            //   totalPractical += parseInt(row.practical, 10);
+            //   totalObtained += parseInt(row.obtained, 10);
+        }
+
+        // Add Total Row
+        const totalRowY = tableStartY + 15 + maxRows * 15;
+        doc.rect(x, totalRowY, rectangleWidth, 15);
+        doc.text("Total", 120, totalRowY + 10);
+        doc.text(`${maxMarks}`, 320, totalRowY + 10);
+        doc.text(`${totalTheory}`, 355, totalRowY + 10);
+        doc.text(`${totalPractical}`, 400, totalRowY + 10);
+        doc.text(`${totalObtained}`, 455, totalRowY + 10);
+
+        // Add Issue Details
+        doc.setFontSize(16);
+        doc.text(`${Grade}`, 240, 610);
+        doc.text(`${IssueDay}`, 240, 635);
+        doc.text(` ${titleCase(IssueMonth)} ${IssueYear}`, 355, 635);
+
+        // Save PDF to a file and send it to the user
+        const pdfPath = `./uploads/certificate_${registration}.pdf`;
+        doc.save(pdfPath);
+
+        // Send the generated PDF to the client
+        res.sendFile(path.resolve(pdfPath), (err) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send("Error downloading the file");
+            }
+            // Remove the generated PDF file after sending it
+            fs.unlinkSync(pdfPath);
+        });
+
+    } catch (err) {
         console.error(err);
-        res.status(500).send("Error downloading the file");
-      }
-      // Remove the generated PDF file after sending it
-      fs.unlinkSync(pdfPath);
-    });
+        res.status(500).send("Server Error");
+    } finally {
+        await client.close();
+    }
+});
+// student test record
+const studentTestSchema = new mongoose.Schema({
+    name: String,
+    batchTime: String,
+    teacherName: String,
+    answer: {
+        partA: Object,
+        partB: Object,
+        partC: Object,
+    },
+    marks: { type: Number, default: 0 }
+});
+const StudentTest = mongoose.model('StudentTest', studentTestSchema);
+app.post('/studentTest', async (req, res) => {
+    try {
+        const studentDetails = req.body; // Get the data sent from the frontend
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server Error");
-  } finally {
-    await client.close();
-  }
+        // Create a new document in the StudentTest collection
+        const studentTest = new StudentTest(studentDetails);
+        console.log(studentTest)
+        // Save the document to the database
+        await studentTest.save();
+
+        // Respond with success
+        res.status(201).json({ message: 'Test submitted successfully!' });
+    } catch (error) {
+        console.error('Error saving test data:', error);
+        res.status(500).json({ message: 'There was an error submitting the test.' });
+    }
 });
 
+app.get('/api/studentTests', async (req, res) => {
+    try {
+        const studentTests = await StudentTest.find();
+        res.status(200).json(studentTests);
+    } catch (err) {
+        console.error('Error fetching student tests:', err);
+        res.status(500).json({ message: 'Server error', error: err });
+    }
+});
+
+// API route to get student test details by ID
+app.get('/api/studentTest/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const studentTest = await StudentTest.findById(id);
+        if (!studentTest) {
+            return res.status(404).json({ message: 'Student test not found' });
+        }
+        res.status(200).json(studentTest);
+    } catch (err) {
+        console.error('Error fetching student test by ID:', err);
+        res.status(500).json({ message: 'Server error', error: err });
+    }
+});
 
 // Start server
 app.listen(port, () => {

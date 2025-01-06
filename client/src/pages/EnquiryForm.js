@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 
 const EnquiryForm = () => {
-  const [enquiryData, setEnquiryData] = useState({
+  const [enquiryData, setEnquiryData] = useState(() => {
+    const savedData = localStorage.getItem('enquiryData');
+    return savedData ? JSON.parse(savedData) : {
     date: '',
     name: '',
     phone: '',
     course: '',
     remarks: ''
-  });
+  }})
+    useEffect(() => {
+      localStorage.setItem('enquiryData', JSON.stringify(enquiryData));
+    }, [enquiryData]);
+  
 
   const [registrationId, setRegistrationId] = useState(null);
 

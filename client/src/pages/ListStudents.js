@@ -7,12 +7,14 @@ const StudentList = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [searchName, setSearchName] = useState('');
+    const [searchFatherName, setSearchFatherName] = useState('');
 
     useEffect(() => {
         // Fetch students from API
         const fetchStudents = async () => {
             try {
-                const response = await axios.get(process.env.REACT_APP_API+'/api/students');
+                const response = await axios.get(`${process.env.REACT_APP_API}/api/students`);
                 setStudents(response.data);
             } catch (error) {
                 setError(error.message);
@@ -27,7 +29,6 @@ const StudentList = () => {
     const handleComplete = async (id) => {
         try {
             await axios.put(`${process.env.REACT_APP_API}/api/students/${id}/complete`);
-            // Refresh the list or update the state
             setStudents(students.map(student =>
                 student._id === id ? { ...student, courseStatus: 'Complete' } : student
             ));
@@ -53,13 +54,25 @@ const StudentList = () => {
     const handleDelete = async (id) => {
         try {
             await axios.delete(`${process.env.REACT_APP_API}/api/students/${id}`);
-            // Refresh the student list
             setStudents(students.filter(student => student._id !== id));
         } catch (error) {
             console.error('Error deleting student:', error);
-            // Handle the error as needed
         }
     };
+
+    const filterStudents = () => {
+        return students
+            .filter(student => {
+                const matchesName = student.name.toLowerCase().includes(searchName.toLowerCase());
+                const matchesFatherName = searchFatherName
+                    ? student.fatherName.toLowerCase().includes(searchFatherName.toLowerCase())
+                    : true;
+                return matchesName && matchesFatherName;
+            })
+            .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date (newest first)
+    };    
+
+    const filteredStudents = filterStudents();
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
@@ -67,6 +80,33 @@ const StudentList = () => {
     return (
         <div className="mt-2">
             <h2 className="mb-2">Student List</h2>
+            <div className="mb-3">
+            <div className="row mb-3">
+                <div className="col-md-6">
+                    <label htmlFor="Name" className="form-label">Name</label>
+                    <input
+                        type="text"
+                        placeholder="Search by Name"
+                        value={searchName}
+                        onChange={(e) => setSearchName(e.target.value)}
+                        className="form-control mb-2"
+                    />
+                </div>
+                <div className="col-md-6">
+                    <label htmlFor="Father's Name" className="form-label">Father's Name</label>
+                    <input
+                        type="text"
+                        placeholder="Search by Father's Name"
+                        value={searchFatherName}
+                        onChange={(e) => setSearchFatherName(e.target.value)}
+                        className="form-control mb-2"
+                    />
+                </div>
+            </div>
+                
+                
+            </div>
+
             <table className="table table-bordered">
                 <thead>
                     <tr>
@@ -94,12 +134,18 @@ const StudentList = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {students.map((student, index) => (
+                    {filteredStudents.map((student, index) => (
                         <tr key={student._id}>
-                            <td>{index + 1}</td> {/* Serial number */}
-                            <td>{student.regId}</td> {/* Registration number */}
+                            <td>{index + 1}</td>
+                            <td>{student.regId}</td>
                             <td>{new Date(student.date).toLocaleDateString()}</td>
-                            <td><img className='w-100 h-100' src={`${process.env.REACT_APP_API}/api/images/${student.photo}`} target="_blank"/></td>
+                            <td>
+                                <img
+                                    className="w-100 h-100"
+                                    src={`${process.env.REACT_APP_API}/api/images/${student.photo}`}
+                                    alt="Student"
+                                />
+                            </td>
                             <td>{student.name}</td>
                             <td>{student.fatherName}</td>
                             <td>{student.motherName}</td>
@@ -112,8 +158,12 @@ const StudentList = () => {
                             <td>{student.fees}</td>
                             <td>{student.duration}</td>
                             <td>{student.durationOption}</td>
-                            <td><a href={`/${student.marksheet}`} target="_blank" rel="noopener noreferrer">View</a></td>
-                            <td><a href={`/${student.aadhaar}`} target="_blank" rel="noopener noreferrer">View</a></td>
+                            <td>
+                                <a href={`/${student.marksheet}`} target="_blank" rel="noopener noreferrer">View</a>
+                            </td>
+                            <td>
+                                <a href={`/${student.aadhaar}`} target="_blank" rel="noopener noreferrer">View</a>
+                            </td>
                             <td>{student.reference}</td>
                             <td>{student.courseStatus}</td>
                             <td>

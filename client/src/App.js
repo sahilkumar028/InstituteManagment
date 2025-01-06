@@ -16,6 +16,8 @@ import './index.css'; // Custom CSS for theme colors
 import Login from './components/Login';
 import EnquiryForm from './pages/EnquiryForm';
 import StudentTest from './pages/StudentTest';
+import ListOfStudentTest from './pages/ListOfStudentTest';
+import TestCheck from './pages/TestCheck';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -35,11 +37,13 @@ const App = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/AddStudents" element={<AddStudent />} />
             <Route path="/StudentTest" element={<StudentTest />} />
+            <Route path="/ListOfStudentTest" element={<ListOfStudentTest />} />
             <Route path="/EnquiryForm" element={<EnquiryForm />} />
             <Route path="/ListStudents" element={<ListStudents />} />
             <Route path="/IssuedCertificate" element={<IssuedCertificateDownloads />} />
             <Route path="/issued/:id" element={<IssuedCertificate />} />
             <Route path="/idcard/:id" element={<IDCard />} />
+            <Route path="/TestCheck/:id" element={<TestCheck />} />
           </Routes>
         </main>
       </div>
