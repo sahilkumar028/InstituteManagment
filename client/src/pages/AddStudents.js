@@ -118,7 +118,7 @@ const AddStudents = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const formData = new FormData();
     Object.keys(studentData).forEach(key => {
       if (key !== 'photo' && key !== 'marksheet' && key !== 'aadhaar') {
@@ -127,15 +127,36 @@ const AddStudents = () => {
         formData.append(key, studentData[key]);
       }
     });
-
+  
     try {
-      const response = await fetch(process.env.REACT_APP_API+'/add-student', {
+      const response = await fetch(process.env.REACT_APP_API + '/add-student', {
         method: 'POST',
         body: formData
       });
       const result = await response.json();
+  
       if (response.ok) {
         setRegistrationId(result.studentId); // Store the registration ID
+        setStudentData({  // Reset student data state
+          date: '',
+          name: '',
+          fatherName: '',
+          motherName: '',
+          dob: '',
+          age: '',
+          email: '',
+          phone: '',
+          address: '',
+          course: '',
+          fees: '',
+          duration: '',
+          durationOption: '',
+          photo: null,
+          marksheet: null,
+          aadhaar: null,
+          reference: ''
+        });
+        localStorage.removeItem('studentData'); // Clear localStorage
       } else {
         alert(`Error: ${result.message}`);
       }
@@ -144,6 +165,7 @@ const AddStudents = () => {
       alert('An error occurred while adding the student');
     }
   };
+  
 
   const isProgrammingCourse = (courseName) => {
     return [

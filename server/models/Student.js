@@ -27,17 +27,27 @@ const studentSchema = new mongoose.Schema({
 studentSchema.index({ email: 1, phone: 1, course: 1, name: 1 }, { unique: true });
 
 // Pre-save hook to generate regId
-studentSchema.pre('save', async function(next) {
+studentSchema.pre('save', async function (next) {
     if (this.isNew) {
         try {
+            // Fetch current date in ddmmyy format
+            const today = new Date();
+            const datePart = `${today.getDate().toString().padStart(2, '0')}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getFullYear().toString().slice(-2)}`;
+
+            // Increment the sequence value
             const counter = await Counter.findOneAndUpdate(
-                { name: 'registrationNumber' },
+                { name: `registrationNumber_${datePart}` }, // Use a separate counter for each date
                 { $inc: { sequence_value: 1 } },
-                { new: true, upsert: true }
+                { new: true, upsert: true } // Create if it doesn't exist
             );
 
-            const regId = `${counter.sequence_value.toString().padStart(4, '0')}`;
-            this.regId = regId;
+            if (counter.sequence_value > 9999) {
+                throw new Error("Registration number sequence exceeded the limit for the day.");
+            }
+
+            // Generate regId in ddmmyy**** format
+            const sequencePart = counter.sequence_value.toString().padStart(4, '0');
+            this.regId = `${datePart}${sequencePart}`;
         } catch (err) {
             return next(err);
         }
@@ -46,7 +56,7 @@ studentSchema.pre('save', async function(next) {
 });
 
 // Custom validation to check for existing students with the same combination
-studentSchema.pre('validate', async function(next) {
+studentSchema.pre('validate', async function (next) {
     if (this.isNew) {
         try {
             const existingStudent = await this.constructor.findOne({
@@ -57,7 +67,7 @@ studentSchema.pre('validate', async function(next) {
             });
 
             if (existingStudent) {
-                return next(new Error('A student with the same email, phone number, course, and name already exists'));
+                return next(new Error('A student with the same email, phone number, course, and name already exists.'));
             }
         } catch (err) {
             return next(err);

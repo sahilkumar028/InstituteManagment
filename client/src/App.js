@@ -52,4 +52,52 @@ const App = () => {
   );
 };
 
-export default App;
+export default App;      
+
+// import React from "react";
+// import "bootstrap/dist/css/bootstrap.min.css";
+// import "@fortawesome/fontawesome-free/css/all.min.css";
+
+// const Dashboard = () => {
+//   const handleLogin = (role) => {
+//     alert(`Navigating to ${role} portal`);
+//     // Redirect logic, e.g., window.location.href = `/portal/${role.toLowerCase()}`;
+//   };
+
+//   return (
+//     <div className="container-fluid d-flex justify-content-center align-items-center vh-100 bg-light">
+//       <div className="row text-center">
+//         {/* Student Box */}
+//         <div className="col-md-6 col-sm-12 mb-4">
+//           <div
+//             className="card p-4 shadow rounded"
+//             style={{ width: "150px", height: "150px", cursor: "pointer" }}
+//             onClick={() => handleLogin("Student")}
+//           >
+//             <div className="card-body d-flex flex-column justify-content-center align-items-center">
+//               <i className="fas fa-users fa-2x mb-3"></i> {/* Multiple User Icon */}
+//               <p className="h5 m-0">Student</p>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Admin Box */}
+//         <div className="col-md-6 col-sm-12 mb-4">
+//           <div
+//             className="card p-4 shadow rounded"
+//             style={{ width: "150px", height: "150px", cursor: "pointer" }}
+//             onClick={() => handleLogin("Admin")}
+//           >
+//             <div className="card-body d-flex flex-column justify-content-center align-items-center">
+//               <i className="fas fa-user fa-2x mb-3"></i> {/* Single User Icon */}
+//               <p className="h5 m-0">Admin</p>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Dashboard;
+

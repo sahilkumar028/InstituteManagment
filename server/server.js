@@ -222,17 +222,43 @@ async function insertData(Data) {
         const db = formClient.db('institute');
         const collection = db.collection('result');
 
-        // Check if registration number already exists
-        const existingEntry = await collection.findOne({ registration: Data.registration });
+        // Generate registration number based on ddmmyy**** format
+        const today = new Date();
+        const datePart = `${today.getDate().toString().padStart(2, '0')}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getFullYear().toString().slice(-2)}`;
 
-        if (existingEntry) {
-            throw new Error(`Registration number ${Data.registration} already exists.`);
+        // Find the highest sequence number for the current date
+        const latestEntry = await collection
+            .find({ registration: { $regex: `^${datePart}` } })
+            .sort({ registration: -1 })
+            .limit(1)
+            .toArray();
+
+        let sequence = 0;
+        if (latestEntry.length > 0) {
+            const latestRegistration = latestEntry[0].registration;
+            const latestSequence = parseInt(latestRegistration.slice(-4), 10);
+            sequence = latestSequence + 1;
         }
 
-        // Insert the new data if no existing entry is found
-        const result = { ...Data };
-        await collection.insertOne(result);
-        console.log("Form data inserted successfully");
+        if (sequence > 99999999999) {
+            throw new Error("Registration number sequence exceeded for today.");
+        }
+
+        const registrationNumber = `${datePart}${sequence.toString().padStart(4, '0')}`;
+
+        // Check if the provided data already has a registration field (it shouldn't)
+        if (Data.registration) {
+            throw new Error(`Data already has a registration number: ${Data.registration}`);
+        }
+
+        // Add the generated registration number to the data
+        const newData = { ...Data, registration: registrationNumber };
+
+        // Insert the new data
+        await collection.insertOne(newData);
+
+        console.log("Form data inserted successfully with registration:", registrationNumber);
+        return registrationNumber; // Return the generated registration number
     } catch (error) {
         console.error("Failed to insert form data", error);
         throw error; // Re-throw error to handle it in the route
@@ -240,6 +266,7 @@ async function insertData(Data) {
         await formClient.close();
     }
 }
+
 
 // POST endpoint for saving data
 app.post("/savedata", async (req, res) => {
