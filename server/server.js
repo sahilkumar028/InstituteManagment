@@ -215,55 +215,40 @@ app.get('/api/images/:filename', (req, res) => {
     });
 });
 
-// Connect to form database and insert data
 async function insertData(Data) {
     try {
+        // Connect to the database
         await formClient.connect();
         const db = formClient.db('institute');
         const collection = db.collection('result');
 
-        // Generate registration number based on ddmmyy**** format
-        const today = new Date();
-        const datePart = `${today.getDate().toString().padStart(2, '0')}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getFullYear().toString().slice(-2)}`;
+        console.log("Input Data:", Data);
 
-        // Find the highest sequence number for the current date
-        const latestEntry = await collection
-            .find({ registration: { $regex: `^${datePart}` } })
-            .sort({ registration: -1 })
-            .limit(1)
-            .toArray();
-
-        let sequence = 0;
-        if (latestEntry.length > 0) {
-            const latestRegistration = latestEntry[0].registration;
-            const latestSequence = parseInt(latestRegistration.slice(-4), 10);
-            sequence = latestSequence + 1;
-        }
-
-        if (sequence > 99999999999) {
-            throw new Error("Registration number sequence exceeded for today.");
-        }
-
-        const registrationNumber = `${datePart}${sequence.toString().padStart(4, '0')}`;
-
-        // Check if the provided data already has a registration field (it shouldn't)
+        // Check if the registration number already exists
         if (Data.registration) {
-            throw new Error(`Data already has a registration number: ${Data.registration}`);
+            const existingData = await collection.findOne({ registration: Data.registration });
+            if (existingData) {
+                throw new Error(`Data with registration number ${Data.registration} already exists.`);
+            }
+        } else {
+            throw new Error("Registration number is missing in the input data.");
         }
 
-        // Add the generated registration number to the data
-        const newData = { ...Data, registration: registrationNumber };
+        // Insert the data directly into the collection
+        const result = await collection.insertOne(Data);
 
-        // Insert the new data
-        await collection.insertOne(newData);
-
-        console.log("Form data inserted successfully with registration:", registrationNumber);
-        return registrationNumber; // Return the generated registration number
+        console.log("Data inserted successfully:", result.insertedId);
+        return result.insertedId; // Return the unique ID of the inserted document
     } catch (error) {
-        console.error("Failed to insert form data", error);
-        throw error; // Re-throw error to handle it in the route
+        console.error("Error inserting data:", error.message);
+        throw error; // Re-throw the error for the calling function to handle
     } finally {
-        await formClient.close();
+        // Ensure the database connection is closed
+        try {
+            await formClient.close();
+        } catch (closeError) {
+            console.error("Error closing the database connection:", closeError.message);
+        }
     }
 }
 
@@ -393,6 +378,7 @@ app.get("/createCertificate/:registration", async (req, res) => {
             orientation: 'portrait',
             unit: 'pt',
             format: 'a4',
+            margin: 1
         });
 
         const qrData = {
@@ -465,7 +451,7 @@ app.get("/createCertificate/:registration", async (req, res) => {
         doc.text(`${titleCase(mothersname)}`, 220, 240);
         doc.text(`${dob}`, 440, 240);
         doc.text(`${rollno}`, 145, 260);
-        doc.text(`${erollno}`, 330, 260);
+        doc.text(`${erollno}`, 310, 260);
         doc.text(`${IssueSession}`, 440, 260);
         doc.text(`${duration}`, 220, 290);
         doc.text(`${titleCase(performance)}`, 345, 340);
