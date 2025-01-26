@@ -86,3 +86,39 @@ a {
 a:hover {
   color: var(--primary-color);
 }
+
+/* Sidebar styling */
+.sidebar {
+  transition: all 0.3s ease;
+}
+
+.main-content {
+  transition: all 0.3s ease;
+}
+
+/* Full-width for mobile */
+.full-width {
+  width: 100% !important;
+  margin-left: 0 !important;
+}
+
+/* Media query for screens smaller than 768px */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    width: 250px;
+    height: 100%;
+    background-color: var(--bs-light);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar.open {
+    display: block;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+}

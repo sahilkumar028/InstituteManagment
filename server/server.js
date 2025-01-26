@@ -6,6 +6,7 @@ const cors = require('cors');
 const Student = require('./models/Student');
 const Enquiry = require('./models/Enquiry');
 const { MongoClient } = require('mongodb');
+const ExcelJS = require('exceljs');
 
 const { jsPDF } = require("jspdf");
 const fs = require('fs');
@@ -146,7 +147,68 @@ app.post('/add-enquiry', async (req, res) => {
     }
 });
 
+app.get('/api/students/download', async (req, res) => {
+    try {
+        const students = await Student.find(); // Fetch all students
 
+        // Create a workbook and worksheet
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Students');
+
+        // Define columns for the Excel sheet
+        worksheet.columns = [
+            { header: 'Reg ID', key: 'regId', width: 15 },
+            { header: 'Name', key: 'name', width: 25 },
+            { header: 'Father Name', key: 'fatherName', width: 25 },
+            { header: 'Mother Name', key: 'motherName', width: 25 },
+            { header: 'Date of Birth', key: 'dob', width: 15 },
+            { header: 'Age', key: 'age', width: 10 },
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'Phone', key: 'phone', width: 15 },
+            { header: 'Address', key: 'address', width: 50 },
+            { header: 'Course', key: 'course', width: 20 },
+            { header: 'Fees', key: 'fees', width: 10 },
+            { header: 'Duration', key: 'duration', width: 15 },
+            { header: 'Duration Option', key: 'durationOption', width: 20 },
+            { header: 'Reference', key: 'reference', width: 20 },
+            { header: 'Course Status', key: 'courseStatus', width: 15 },
+        ];
+
+        // Add student data as rows
+        students.forEach(student => {
+            worksheet.addRow({
+                regId: student.regId,
+                name: student.name,
+                fatherName: student.fatherName,
+                motherName: student.motherName,
+                dob: student.dob.toISOString().split('T')[0],
+                age: student.age,
+                email: student.email,
+                phone: student.phone,
+                address: student.address,
+                course: student.course,
+                fees: student.fees,
+                duration: student.duration,
+                durationOption: student.durationOption,
+                reference: student.reference,
+                courseStatus: student.courseStatus,
+            });
+        });
+
+        // Set headers for download
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        res.setHeader('Content-Disposition', 'attachment; filename=students.xlsx');
+
+        // Write workbook to response
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) {
+        res.status(500).json({ message: 'Error generating Excel file', error });
+    }
+});
 
 // Endpoint to get the list of students
 app.get('/api/students', async (req, res) => {
@@ -606,6 +668,55 @@ app.get('/api/studentTest/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err });
     }
 });
+
+app.get('/student-data/monthly', async (req, res) => {
+    try {
+        // Aggregate data to count students grouped by month and year
+        const monthlyData = await Student.aggregate([
+            {
+                $group: {
+                    _id: {
+                        month: { $month: "$date" }, // Extract the month from the 'date' field
+                        year: { $year: "$date" }, // Extract the year from the 'date' field
+                    },
+                    count: { $sum: 1 }, // Count the number of students
+                },
+            },
+            {
+                $sort: { "_id.year": 1, "_id.month": 1 }, // Sort by year and then by month
+            },
+        ]);
+
+        // Map the aggregated data to include month names and year
+        const months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ];
+
+        const result = monthlyData.map(item => ({
+            month: months[item._id.month - 1], // Convert month number to name
+            year: item._id.year, // Include the year
+            count: item.count, // Student count for the month
+        }));
+
+        res.status(200).json(result); // Send the result as JSON
+    } catch (error) {
+        console.error('Error fetching monthly student data:', error);
+        res.status(500).json({ message: 'Failed to fetch monthly student data', error });
+    }
+});
+
+
 
 // Start server
 app.listen(port, () => {

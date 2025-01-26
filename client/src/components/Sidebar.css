@@ -1,42 +1,46 @@
-/* src/components/Sidebar.css */
-
-/* Sidebar Container */
 .sidebar-container {
-    top: 0;
-    left: 0;
-    height: 100vh;
-    transition: transform 0.3s ease;
-    z-index: 1000;
+  width: 250px;
+  position: fixed;
+  top: 56px; /* Offset for the fixed Navbar */
+  left: 0;
+  bottom: 0;
+  background-color: var(--sidebar-bg-color);
+  overflow-y: auto;
+  z-index: 1040;
+  transition: left 0.3s ease-in-out;
+}
+
+.sidebar-container.collapse {
+  display: none;
+}
+
+.sidebar-dark {
+  background-color: #343a40;
+  color: white;
+}
+
+.sidebar-light {
+  background-color: #f8f9fa;
+  color: black;
+}
+
+@media (max-width: 767px) {
+  .sidebar-container {
+    width: 100%; /* Full width on small screens */
+    position: fixed;
+    top: 56px;
+    left: -100%; /* Hidden by default */
   }
-  
-  /* Sidebar Styles for Dark and Light Mode */
-  .sidebar-dark {
-    background-color: #202020;
+
+  .sidebar-container.show {
+    left: 0; /* Slide in on toggle */
   }
-  
-  .sidebar-light {
-    background-color: #F1F1F1;
+
+  /* Main content adjusts when sidebar is hidden */
+  .main-content {
+    margin-left: 0 !important;
   }
-  
-  .nav-link.active {
-    background-color: #1C4E80;
-    color: #FFF;
+  main{
+    margin-left:0 !important;
   }
-  
-  .nav-link {
-    color: #7E909A;
-  }
-  
-  /* Mobile Sidebar Styles */
-  @media (max-width: 767.98px) {
-    .sidebar-container {
-      transform: translateX(-100%);
-      width: 0;
-    }
-  
-    .collapse.show {
-      transform: translateX(0);
-      background-color: #7E909A;
-    }
-  }
-  
+}

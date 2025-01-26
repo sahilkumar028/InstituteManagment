@@ -1,0 +1,120 @@
+.font-size-20 {
+    font-size: 20px;
+  }
+  
+  .color-danger {
+    color: red !important;
+  }
+  
+  .color-darkcyan {
+    color: darkcyan !important;
+  }
+  
+  .color-cyan {
+    color: cyan !important;
+  }
+  
+  .color-success {
+    color: darkgreen !important;
+  }
+  
+  .color-primary {
+    color: blue !important;
+  }
+  
+  .card-modified {
+    margin-bottom: 40px;
+    border: 0;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    border-radius: 40px;
+    box-shadow: 0 0 2px 1px #e0e0e0 !important;
+  }
+  
+  .cursor-pointer {
+    cursor: pointer !important;
+  }
+  
+  .display-hidden {
+    display: none !important;
+  }
+  
+  .f_10 {
+    font-size: 10px !important;
+  }
+  
+  .f_20 {
+    font-size: 20px !important;
+  }
+  
+  .ml-5px {
+    margin-left: 5px !important;
+  }
+  
+  .p-25px {
+    padding: 25px !important;
+  }
+  
+  .search-card {
+    background-color: #fff;
+    box-shadow: 0 2px 24px 0 #c7d9ff;
+    padding-bottom: 15px;
+    border: 2px solid #e2e4ea;
+    margin: 15px 0 20px;
+    border-radius: 25px;
+  }
+  
+  .mt-15px {
+    margin-top: 15px !important;
+  }
+  
+  .mb--15px {
+    margin-bottom: -15px !important;
+  }
+  
+  .max-width-150px {
+    max-width: 150px !important;
+  }
+  
+  .min-width-150px {
+    min-width: 150px !important;
+  }
+  
+  .max-width-200px {
+    max-width: 200px !important;
+  }
+  
+  .min-width-200px {
+    min-width: 200px !important;
+  }
+  
+  .mt-15px {
+    margin-top: 15px !important;
+  }
+  
+  .mt-10px {
+    margin-top: 10px !important;
+  }
+  
+  tr:hover {
+    background-color: #f9f9f9 !important;
+  }
+  
+  .max-width-150px {
+    max-width: 150px !important;
+  }
+  
+  .min-width-150px {
+    min-width: 150px !important;
+  }
+  
+  .mr-5px {
+    margin-right: 5px !important;
+  }
+  
+  .excel-icon {
+    font-size: 28px;
+    padding-left: 15px;
+    padding-right: 5px;
+    margin-top: 3px;
+  }
