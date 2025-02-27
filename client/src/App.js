@@ -17,6 +17,7 @@ import EnquiryForm from './pages/EnquiryForm';
 import StudentTest from './pages/StudentTest';
 import Tally from './pages/Tally';
 import ListOfStudentTest from './pages/ListOfStudentTest';
+import PDFSplitter from './pages/PDFSplitter';
 import TestCheck from './pages/TestCheck';
 
 const App = () => {
@@ -60,6 +61,7 @@ const App = () => {
             <Route path="/issued/:id" element={<IssuedCertificate />} />
             <Route path="/idcard/:id" element={<IDCard />} />
             <Route path="/TestCheck/:id" element={<TestCheck />} />
+            <Route path="/PDFSplitter" element={<PDFSplitter />} />
           </Routes>
         </main>
       </div>

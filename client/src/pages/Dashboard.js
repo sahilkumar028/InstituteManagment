@@ -176,7 +176,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      <div className="mt-5">
+      <div className="mt-5 w-50">
         <h2>Student Count (Month-wise)</h2>
 
         {loading ? (

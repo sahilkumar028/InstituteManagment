@@ -1,7 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = ({ toggleDarkMode, darkMode, toggleSidebar }) => {
+  const navigate = useNavigate();
+
+  // Redirect to the PDFSplitter page when button is clicked
+  const handlePrintBothSide = () => {
+    navigate('/pdfsplitter');
+  };
+
   return (
     <nav
       className={`navbar navbar-expand-lg ${darkMode ? 'navbar-dark bg-dark' : 'navbar-light bg-light'} fixed-top`}
@@ -14,7 +21,13 @@ const Navbar = ({ toggleDarkMode, darkMode, toggleSidebar }) => {
         >
           <i className="fas fa-bars"></i>
         </button>
-        <Link className="navbar-brand" to="/"><img style={{ mixBlendMode: 'multiply'}} src='https://sahaskillinstitute.com/img/SI-logo.png' /></Link>
+        <Link className="navbar-brand" to="/">
+          <img
+            style={{ mixBlendMode: 'multiply' }}
+            src="https://sahaskillinstitute.com/img/SI-logo.png"
+            alt="Logo"
+          />
+        </Link>
         <button
           className="navbar-toggler"
           type="button"
@@ -50,9 +63,18 @@ const Navbar = ({ toggleDarkMode, darkMode, toggleSidebar }) => {
               <Link className="nav-link" to="/ListOfStudentTest">Student Test Records</Link>
             </li>
           </ul>
-          <button className="btn btn-primary" onClick={toggleDarkMode}>
-            {darkMode ? 'Light Mode' : 'Dark Mode'}
-          </button>
+          <div className="d-flex align-items-center">
+            {/* Yellow button to redirect to PDFSplitter page */}
+            <button
+              className="btn btn-warning me-2"
+              onClick={handlePrintBothSide}
+            >
+              Print Both Side
+            </button>
+            <button className="btn btn-primary" onClick={toggleDarkMode}>
+              {darkMode ? 'Light Mode' : 'Dark Mode'}
+            </button>
+          </div>
         </div>
       </div>
     </nav>

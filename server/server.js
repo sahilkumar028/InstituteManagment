@@ -7,6 +7,21 @@ const Student = require('./models/Student');
 const Enquiry = require('./models/Enquiry');
 const { MongoClient } = require('mongodb');
 const ExcelJS = require('exceljs');
+const { createCanvas } = require('canvas');
+const JsBarcode = require('jsbarcode');
+const { PDFDocument } = require('pdf-lib');
+
+async function generateBarcode(registration) {
+    const canvas = createCanvas(400, 150); // Increased resolution
+    JsBarcode(canvas, registration, {
+        format: "CODE128",
+        width: 3,       // Increased bar width for better clarity
+        height: 80,     // Increased height for better visibility
+        displayValue: false,
+        margin: 5       // Adds margin to prevent cropping
+    });
+    return canvas.toDataURL("image/png");
+}
 
 const { jsPDF } = require("jspdf");
 const fs = require('fs');
@@ -482,11 +497,15 @@ app.get("/createCertificate/:registration", async (req, res) => {
                 const qrDataUrl = await generateQRCode(qrData, qrOptions); // Wait for QR code generation
                 console.log('QR Code Data URL:', qrDataUrl);
 
+                
+                const barcodeDataUrl = await generateBarcode(registration);
+                doc.addImage(barcodeDataUrl, 'PNG', 450, 70, 85, 14);
+
                 // Add the QR code to the PDF
-                doc.addImage(qrDataUrl, 'JPEG', 100, 100, 85, 80)
+                doc.addImage(qrDataUrl, 'JPEG', 70, 100, 85, 80)
 
                 // Add the image to the document
-                doc.addImage(dataUrl, "JPEG", 440, 100, 85, 70);
+                doc.addImage(dataUrl, "JPEG", 450, 100, 85, 70);
             } else {
                 console.log(`The path ${filePath} is not a file.`);
             }
@@ -508,10 +527,10 @@ app.get("/createCertificate/:registration", async (req, res) => {
 
         doc.setFontSize(14);
         doc.text(`${registration}`, 70, 80);
-        doc.text(`${titleCase(name)}`, 220, 190);
-        doc.text(`${titleCase(fathersname)}`, 220, 215);
-        doc.text(`${titleCase(mothersname)}`, 220, 240);
-        doc.text(`${dob}`, 440, 240);
+        doc.text(`${titleCase(name)}`, 220, 180);
+        doc.text(`${titleCase(fathersname)}`, 220, 205);
+        doc.text(`${titleCase(mothersname)}`, 220, 230);
+        doc.text(`${dob}`, 440, 230);
         doc.text(`${rollno}`, 145, 260);
         doc.text(`${erollno}`, 310, 260);
         doc.text(`${IssueSession}`, 440, 260);
@@ -716,9 +735,174 @@ app.get('/student-data/monthly', async (req, res) => {
     }
 });
 
+// mcp qr code generator
+// app.get("/mcpQr", async (req, res) => {
+//     try {
+//         const doc = new jsPDF({
+//             orientation: "portrait",
+//             unit: "pt",
+//             format: "a4",
+//             margin: 0,
+//         });
+
+//         const rows = 9; // Number of rows of QR codes on the page
+//         const cols = 7; // Number of columns of QR codes on the page
+//         const qrSize = 65; // Size of each QR code (width and height in points)
+//         const startX = 10; // Starting X position
+//         const startY = 10; // Starting Y position
+//         const spacingX = 20; // Horizontal spacing between QR codes
+//         const spacingY = 20; // Vertical spacing between QR codes
+
+//         let idCounter = 1; // Counter for generating unique IDs
+//         const qrOptions = {
+//             errorCorrectionLevel: "H",
+//             type: "image/jpeg",
+//             margin: 0,
+//         };
+
+//         // Generate and add QR codes to the PDF
+//         for (let row = 0; row < rows; row++) {
+//             for (let col = 0; col < cols; col++) {
+//                 const qrData = `MCP280125${String(idCounter).padStart(4, "0")}`;
+//                 const qrDataUrl = await QRCode.toDataURL(qrData, qrOptions);
+
+//                 const posX = startX + col * (qrSize + spacingX);
+//                 const posY = startY + row * (qrSize + spacingY);
+
+//                 doc.addImage(qrDataUrl, "JPEG", posX, posY, qrSize, qrSize);
+                
+//                 idCounter++;
+//             }
+//         }
+
+//         // Save the PDF to a file
+//         const pdfPath = "./uploads/multiple_qr_codes.pdf";
+//         doc.save(pdfPath);
+
+//         // Send the PDF file to the client
+//         res.sendFile(path.resolve(pdfPath), (err) => {
+//             if (err) {
+//                 console.error(err);
+//                 res.status(500).send("Error downloading the file");
+//             }
+
+//             // Remove the generated PDF after sending it
+//             fs.unlinkSync(pdfPath);
+//         });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).send("Server Error");
+//     }
+// });
+
 
 
 // Start server
+
+const uploadpdf = multer({ storage: multer.memoryStorage() });
+
+/**
+ * POST /split/odd
+ * Accepts a PDF upload and returns a PDF containing only odd-numbered pages.
+ */
+/**
+ * POST /split/odd
+ * Accepts a PDF upload and returns a PDF containing only odd-numbered pages.
+ */
+app.post('/split/odd', uploadpdf.single('pdf'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).send('No PDF file uploaded.');
+      }
+  
+      // Load the uploaded PDF from memory
+      const pdfBytes = req.file.buffer;
+      const originalPdf = await PDFDocument.load(pdfBytes);
+  
+      // Create a new PDF document for the reversed odd pages
+      const reversedOddPdf = await PDFDocument.create();
+      const totalPages = originalPdf.getPageCount();
+  
+      // Collect indices of odd-numbered pages
+      const oddPageIndices = [];
+      for (let i = 0; i < totalPages; i++) {
+        // (i + 1) represents the actual page number
+        if ((i + 1) % 2 === 1) {
+          oddPageIndices.push(i);
+        }
+      }
+  
+      // Reverse the order of odd page indices
+    //   oddPageIndices.reverse();/
+  
+      // Copy the odd pages in reversed order into the new PDF
+      for (const pageIndex of oddPageIndices) {
+        const [copiedPage] = await reversedOddPdf.copyPages(originalPdf, [pageIndex]);
+        reversedOddPdf.addPage(copiedPage);
+      }
+  
+      // Save the resulting PDF to a byte array
+      const reversedOddPdfBytes = await reversedOddPdf.save();
+  
+      // Set response headers to display the PDF inline in the browser
+      res.setHeader('Content-Disposition', 'inline; filename="odd_pages_reversed.pdf"');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.send(Buffer.from(reversedOddPdfBytes));
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Error processing PDF.');
+    }
+  });
+  
+/**
+ * POST /split/even
+ * Accepts a PDF upload and returns a PDF containing only even-numbered pages.
+ */
+app.post('/split/even', uploadpdf.single('pdf'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).send('No PDF file uploaded.');
+      }
+  
+      // Load the uploaded PDF from memory
+      const pdfBytes = req.file.buffer;
+      const originalPdf = await PDFDocument.load(pdfBytes);
+  
+      // Create a new PDF document for even pages
+      const evenPdf = await PDFDocument.create();
+      const totalPages = originalPdf.getPageCount();
+  
+      // Collect even-numbered pages first
+      let evenPages = [];
+      for (let i = 0; i < totalPages; i++) {
+        if ((i + 1) % 2 === 0) {
+          evenPages.push(i); // Store even page indexes
+        }
+      }
+  
+      // Reverse the order before copying pages
+      evenPages.reverse();
+  
+      // Copy and add pages in reversed order
+      for (let i of evenPages) {
+        const [copiedPage] = await evenPdf.copyPages(originalPdf, [i]);
+        evenPdf.addPage(copiedPage);
+      }
+  
+      // Save the resulting PDF to a byte array
+      const evenPdfBytes = await evenPdf.save();
+  
+      // Set response headers to force download
+      res.setHeader('Content-Disposition', 'attachment; filename="even_pages_reversed.pdf"');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.send(Buffer.from(evenPdfBytes));
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Error processing PDF.');
+    }
+  });
+  
+
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
