@@ -104,8 +104,6 @@ app.post('/add-student', upload.fields([
     }
 });
 
-
-// Add Enquiry route
 // Add Enquiry route
 const EnquiryCounter = require('./models/EnquiryCounter');
 
@@ -805,10 +803,6 @@ const uploadpdf = multer({ storage: multer.memoryStorage() });
  * POST /split/odd
  * Accepts a PDF upload and returns a PDF containing only odd-numbered pages.
  */
-/**
- * POST /split/odd
- * Accepts a PDF upload and returns a PDF containing only odd-numbered pages.
- */
 app.post('/split/odd', uploadpdf.single('pdf'), async (req, res) => {
     try {
       if (!req.file) {
@@ -901,6 +895,10 @@ app.post('/split/even', uploadpdf.single('pdf'), async (req, res) => {
       res.status(500).send('Error processing PDF.');
     }
   });
+
+app.get('/run', async (req, res) => {
+    res.send("hello")
+});
   
 
 app.listen(port, () => {
