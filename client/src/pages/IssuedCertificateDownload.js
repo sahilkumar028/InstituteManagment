@@ -27,16 +27,22 @@ const IssuedCertificateDownloads = () => {
         fetchIssuedDocuments();
     }, []);
 
-    const handleDownload = (url, fileName) => {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.click();
+    const handleDownload = (registration) => {
+        // Clean any existing certificate data
+        localStorage.removeItem(`certificate_${registration}`);
+        document.cookie = `certificate_${registration}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        
+        // Open the PDF in a new tab
+        window.open(`${process.env.REACT_APP_API}/createCertificate/${registration}`, '_blank');
     };
 
     const handleDelete = async (registration) => {
         if (window.confirm("Are you sure you want to delete this record?")) {
             try {
+                // Clean certificate data before deleting
+                localStorage.removeItem(`certificate_${registration}`);
+                document.cookie = `certificate_${registration}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                
                 await axios.delete(`http://192.168.1.250:5000/deletedata/registration/${registration}`);
                 const updatedStudents = students.filter((student) => student.registration !== registration);
                 setStudents(updatedStudents);
@@ -121,12 +127,7 @@ const IssuedCertificateDownloads = () => {
                                     {student.certificate && (
                                         <button
                                             className="btn btn-primary btn-sm mb-2"
-                                            onClick={() =>
-                                                handleDownload(
-                                                    `http://192.168.1.250:5000/createCertificate/${student.registration}`,
-                                                    `${student.name}-Certificate.pdf`
-                                                )
-                                            }
+                                            onClick={() => handleDownload(student.registration)}
                                         >
                                             Download Certificate
                                         </button>

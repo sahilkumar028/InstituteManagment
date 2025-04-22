@@ -10,6 +10,8 @@ const StudentList = () => {
     const navigate = useNavigate();
     const [searchName, setSearchName] = useState('');
     const [searchFatherName, setSearchFatherName] = useState('');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const studentsPerPage = 10;
 
@@ -71,6 +73,10 @@ const StudentList = () => {
         navigate(`/issued/${student._id}`, { state: { student } });
     };
 
+    const handleFeesPayment = (student) => {
+        navigate(`/FeesPayment`, { state: { student } });
+    };
+
     const handleDelete = async (id) => {
         try {
             await axios.delete(`${process.env.REACT_APP_API}/api/students/${id}`);
@@ -81,16 +87,18 @@ const StudentList = () => {
     };
 
     const filterStudents = () => {
-        return students
-            .filter(student => {
-                const matchesName = student.name.toLowerCase().includes(searchName.toLowerCase());
-                const matchesFatherName = searchFatherName
-                    ? student.fatherName.toLowerCase().includes(searchFatherName.toLowerCase())
-                    : true;
-                return matchesName && matchesFatherName;
-            })
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
-    };
+        return students.filter(student => {
+          const matchesName = student.name.toLowerCase().includes(searchName.toLowerCase());
+          const matchesFatherName = searchFatherName ? student.fatherName.toLowerCase().includes(searchFatherName.toLowerCase()) : true;
+    
+          const studentDate = new Date(student.date);
+          const from = fromDate ? new Date(fromDate) : null;
+          const to = toDate ? new Date(toDate) : null;
+          const matchesDate = (!from || studentDate >= from) && (!to || studentDate <= to);
+    
+          return matchesName && matchesFatherName && matchesDate;
+        }).sort((a, b) => new Date(b.date) - new Date(a.date));
+      };
 
     const filteredStudents = filterStudents();
 
@@ -132,6 +140,25 @@ const StudentList = () => {
                             value={searchFatherName}
                             onChange={(e) => setSearchFatherName(e.target.value)}
                             className="form-control mb-2"
+                        />
+                    </div>
+                    <div className="col-md-3">
+                        <label className="form-label">From Date</label>
+                        <input
+                        type="date"
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                        className="form-control"
+                        />
+                    </div>
+
+                    <div className="col-md-3">
+                        <label className="form-label">To Date</label>
+                        <input
+                        type="date"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
+                        className="form-control"
                         />
                     </div>
                 </div>
@@ -205,21 +232,38 @@ const StudentList = () => {
                                 <td>{student.reference}</td>
                                 <td>{student.courseStatus}</td>
                                 <td>
-                                    <button onClick={() => handleICard(student._id)} className="btn text-primary btn-sm w-100 mb-2">
-                                        <i className="fas fa-id-card"></i> ID Card
-                                    </button>
-                                    <button onClick={() => handleUpdate(student._id)} className="btn text-warning btn-sm w-100 mb-2">
-                                        <i className="fas fa-edit"></i> Update
-                                    </button>
-                                    <button onClick={() => handleComplete(student._id)} className="btn text-success btn-sm w-100 mb-2">
-                                        <i className="fas fa-check-circle"></i> Complete
-                                    </button>
-                                    <button onClick={() => handleIssued(student)} className="btn text-info btn-sm w-100 mb-2">
-                                        <i className="fas fa-check-square"></i> Issued
-                                    </button>
-                                    <button onClick={() => handleDelete(student._id)} className="btn text-danger btn-sm w-100 mb-2">
-                                        <i className="fas fa-trash"></i> Delete
-                                    </button>
+                                    <div className="btn-group" role="group">
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            onClick={() => handleUpdate(student._id)}
+                                        >
+                                            <i className="fas fa-edit"></i>
+                                        </button>
+                                        <button
+                                            className="btn btn-info btn-sm"
+                                            onClick={() => handleICard(student._id)}
+                                        >
+                                            <i className="fas fa-id-card"></i>
+                                        </button>
+                                        <button
+                                            className="btn btn-success btn-sm"
+                                            onClick={() => handleIssued(student)}
+                                        >
+                                            <i className="fas fa-certificate"></i>
+                                        </button>
+                                        <button
+                                            className="btn btn-warning btn-sm"
+                                            onClick={() => handleFeesPayment(student)}
+                                        >
+                                            <i className="fas fa-money-bill"></i>
+                                        </button>
+                                        <button
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => handleDelete(student._id)}
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -229,7 +273,7 @@ const StudentList = () => {
                 
             </div>
 
-            <div className="pagination mt-15px">
+            {/* <div className="pagination mt-15px">
                 {[...Array(totalPages)].map((_, index) => (
                     <button
                         key={index}
@@ -239,7 +283,39 @@ const StudentList = () => {
                         {index + 1}
                     </button>
                 ))}
-            </div>
+            </div> */}
+            <div className="pagination mt-15px">
+                {[...Array(totalPages)].map((_, index) => {
+                    const page = index + 1;
+                    // Show the first 1 pages, last 1 pages, and 3 pages around the current page
+                    if (page <= 1 || page > totalPages - 1 || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                    return (
+                        <button
+                        key={index}
+                        onClick={() => handlePageChange(page)}
+                        className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'} me-2`}
+                        >
+                        {page}
+                        </button>
+                    );
+                    }
+                    // Show "..." for skipped pages
+                    if (page === 2 || page === totalPages - 2) {
+                    return (
+                        <button
+                        key={index}
+                        className="btn btn-secondary disabled me-2"
+                        disabled
+                        >
+                        ...
+                        </button>
+                    );
+                    }
+                    return null; // Skip pages that do not meet the criteria
+                })}
+                </div>
+
+
         </div>
     );
 };

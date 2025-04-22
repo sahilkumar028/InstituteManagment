@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import './login.css'
+import { useNavigate } from 'react-router-dom';
+import './login.css';
+
+// Sample user list (can be replaced with API call)
+const users = [
+  { username: 'SAHA', password: '1994' },
+  { username: 'ADMIN', password: '1234' },
+  { username: 'USER', password: '5678' },
+];
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -17,35 +25,32 @@ const Login = () => {
     setLoading(true);
     setError(null);
 
-    try {
-      const response = await axios.post('http://192.168.1.250:5000/api/login', credentials);
+    // Check if credentials match any user
+    const validUser = users.find(user => user.username === credentials.username && user.password === credentials.password);
 
-      // Store the JWT token in localStorage
-      localStorage.setItem('token', response.data.token);
+    if (validUser) {
+      const expiryTime = Date.now() + 30 * 60 * 1000; // 30 minutes from now
 
-      console.log(response.data.message); // "Login successful"
-      // Redirect to dashboard or another page after successful login
-      window.location.href = '/dashboard';  // Example redirect
-    } catch (err) {
-      setError(err.response ? err.response.data.message : 'Error logging in');
-    } finally {
-      setLoading(false);
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('expiryTime', expiryTime);
+
+      navigate('/'); // Redirect to dashboard
+    } else {
+      setError('Invalid Username or Password');
     }
+
+    setLoading(false);
   };
 
   return (
     <div className="container-fluid h-100">
-        
       <div className="row h-100">
-        {/* Left Side - Image */}
         <div className="col-md-6 d-flex align-items-center position-relative" style={{ backgroundImage: 'url(https://www.wakefit.co/blog/wp-content/uploads/2022/01/Notes-min.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
-        <img src="https://sahaskillinstitute.com/img/logo2.png" alt="Logo" className="w-25 position-absolute top-0" />
+          <img src="https://sahaskillinstitute.com/img/logo2.png" alt="Logo" className="w-25 position-absolute top-0" />
           <div className="text-center text-white w-100">
             <h1>Welcome to Our Platform</h1>
           </div>
         </div>
-
-        {/* Right Side - Login Form */}
         <div className="col-md-6 d-flex justify-content-center align-items-center bg-light">
           <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
             <div className="card-body">
@@ -54,27 +59,11 @@ const Login = () => {
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="username">Username</label>
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    className="form-control"
-                    value={credentials.username}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <input type="text" id="username" name="username" className="form-control" value={credentials.username} onChange={handleInputChange} required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="password">Password</label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    className="form-control"
-                    value={credentials.password}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <input type="password" id="password" name="password" className="form-control" value={credentials.password} onChange={handleInputChange} required />
                 </div>
                 <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
                   {loading ? 'Logging in...' : 'Login'}

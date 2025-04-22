@@ -36,6 +36,13 @@ const IssuedCertificate = () => {
         IssueMonth: ''
     });
     const [errorMessage, setErrorMessage] = useState('');
+    const courses = [
+        { name: 'Office Automation'},
+        { name: 'Diploma in Computer Application and Accounting'},
+        { name: 'Advance Diploma in Computer Application'},
+        { name: 'Certificate Courses'},
+        { name: 'Spoken English'}
+      ];
 
     // Move calculateGrade function above useEffect
     const calculateGrade = (updatedRows) => {
@@ -287,7 +294,7 @@ const IssuedCertificate = () => {
                         disabled
                     />
                 </div>
-                <div className="form-group">
+                {/* <div className="form-group">
                     <label htmlFor="certificate">Certificate</label>
                     <input
                         type="text"
@@ -297,6 +304,15 @@ const IssuedCertificate = () => {
                         value={formValues.certificate}
                         onChange={handleChange}
                     />
+                </div> */}
+                <div className="form-group">
+                    <label htmlFor="certificate" className="form-label">Certificate</label>
+                    <select id="certificate" name="certificate" value={formValues.certificate} onChange={handleChange} className="form-control" required>
+                    <option value="">Select Course</option>
+                    {courses.map((course, index) => (
+                        <option key={index} value={course.name}>{course.name}</option>
+                    ))}
+                    </select>
                 </div>
                 <div className="form-group">
                     <label className='h3'>Subjects</label>

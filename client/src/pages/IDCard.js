@@ -33,6 +33,9 @@ const IDCard = () => {
         <div className="id-card-container" style={{ padding: '20px', border: '1px solid #ddd', width: '300px', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}>
             <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Student ID Card</h3>
             <div style={{ marginBottom: '10px' }}>
+                <img src={`${process.env.REACT_APP_API}/api/images/${student.photo}`} alt="Student" style={{ width: '100%', borderRadius: '8px' }} />
+            </div>
+            <div style={{ marginBottom: '10px' }}>
                 <strong>Name:</strong> {student.name}
             </div>
             <div style={{ marginBottom: '10px' }}>
@@ -53,9 +56,7 @@ const IDCard = () => {
             <div style={{ marginBottom: '10px' }}>
                 <strong>Address:</strong> {student.address}
             </div>
-            <div style={{ marginBottom: '10px' }}>
-                <img src={`${process.env.REACT_APP_API}/api/images/${student.photo}`} alt="Student" style={{ width: '100%', borderRadius: '8px' }} />
-            </div>
+            
         </div>
     );
 };

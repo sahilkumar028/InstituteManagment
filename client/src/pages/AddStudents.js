@@ -36,6 +36,7 @@ const AddStudents = () => {
     { name: 'Advance Excel', fee: 2500, duration: 2 },
     { name: 'Tally/Tally Prime', fee: 4000, duration: 2 },
     { name: 'Auto CAD', fee: 5000, duration: 3 },
+    { name: 'Web designing ', fee: 8500, duration: 6 },
     { name: 'Web Development using MERN', fee: 18000, duration: 14 },
     { name: 'Web Development using Java Springboot', fee: 18000, duration: 14 },
     { name: 'C Language', fee: 3500, duration: 4 },
@@ -44,6 +45,7 @@ const AddStudents = () => {
     { name: 'Advance Java', fee: 7000, duration: 6 },
     { name: 'Python', fee: 6000, duration: 6 },
     { name: 'Data Structure and Algorithms', fee: 6000, duration: 6 },
+    { name: 'Spoken', fee: 1500, duration: 1 },
     { name: 'Certificate Courses', fee: 2500, duration: 1 }
   ];
 
@@ -190,6 +192,7 @@ const AddStudents = () => {
 
   return (
     <div className='container'>
+      <h2 className="mb-2 color-darkcyan">Add Student</h2>
       <form onSubmit={handleSubmit} className="form-container">
         <div className="row mb-3">
           <div className="col-md-6">
