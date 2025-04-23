@@ -1,4 +1,4 @@
-const IssuedCertificate = require('../models/IssuedCertificate');
+const Result = require('../models/resultSchema');
 const Student = require('../models/Student');
 const { jsPDF } = require("jspdf");
 const QRCode = require('qrcode');
@@ -6,10 +6,6 @@ const fs = require('fs');
 const path = require('path');
 const { createCanvas } = require('canvas');
 const JsBarcode = require('jsbarcode');
-const { MongoClient } = require('mongodb');
-
-const client = new MongoClient('mongodb://127.0.0.1:27017');
-const dbName = 'institute';
 
 // Generate QR code
 async function generateQRCode(data, options) {
@@ -45,20 +41,19 @@ function titleCase(str) {
 // Get all issued certificates
 exports.getAllIssuedCertificates = async (req, res) => {
     try {
-        const certificates = await IssuedCertificate.find()
-            .populate('studentId', 'name regId')
-            .sort({ issueDate: -1 });
+        const certificates = await Result.find()
+            .sort({ registration: -1 });
         res.json(certificates);
     } catch (error) {
-        res.status(500).json({ message: 'Failed to retrieve certificates', error });
+        console.error('Error fetching certificates:', error);
+        res.status(500).json({ message: 'Failed to retrieve certificates', error: error.message });
     }
 };
 
 // Get certificate by ID
 exports.getCertificateById = async (req, res) => {
     try {
-        const certificate = await IssuedCertificate.findById(req.params.id)
-            .populate('studentId', 'name regId');
+        const certificate = await Result.findById(req.params.id);
         if (!certificate) {
             return res.status(404).json({ message: 'Certificate not found' });
         }
@@ -71,13 +66,8 @@ exports.getCertificateById = async (req, res) => {
 // Issue new certificate
 exports.issueCertificate = async (req, res) => {
     try {
-        // Connect to the database
-        await client.connect();
-        const db = client.db(dbName);
-        const collection = db.collection('result');  // Change collection name if needed
-
-        // Fetch student data by registration number
-        const certificate = await collection.findOne({ registration: req.params.registration });
+        // Fetch student data by registration number using Result model
+        const certificate = await Result.findOne({ registration: req.params.registration });
 
         if (!certificate) {
             return res.status(404).send("Certificate not found");
@@ -133,33 +123,51 @@ exports.issueCertificate = async (req, res) => {
             margin: 2
         };
 
-        // Read and convert the student's photo to base64
-        const filename = photo.split('/').pop();
-        const filePath = 'uploads/' + filename;
+        // Create watermark canvas
+        const watermarkCanvas = createCanvas(400, 400);
+        const ctx = watermarkCanvas.getContext('2d');
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.1)';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('SAHA INSTITUTE', 200, 200);
+        const watermarkDataUrl = watermarkCanvas.toDataURL('image/png');
 
+        // Try to read student's photo, if not found use watermark
+        let photoDataUrl;
         try {
+            const filename = photo.split('/').pop();
+            const filePath = 'uploads/' + filename;
+            console.log('Attempting to load photo from:', filePath);
+            
             const stats = fs.lstatSync(filePath);
 
             if (stats.isFile()) {
+                console.log('Photo file found, loading...');
                 const buffer = fs.readFileSync(filePath);
                 const base64String = buffer.toString('base64');
-                const dataUrl = `data:image/jpeg;base64,${base64String}`;
-
-                const qrDataUrl = await generateQRCode(qrData, qrOptions);
-
-                const barcodeDataUrl = await generateBarcode(registration);
-                doc.addImage(barcodeDataUrl, 'PNG', 450, 70, 85, 14);
-
-                doc.addImage(qrDataUrl, 'JPEG', 70, 100, 85, 80)
-                doc.addImage(dataUrl, "JPEG", 450, 100, 85, 70);
+                photoDataUrl = `data:image/jpeg;base64,${base64String}`;
+                console.log('Student photo loaded successfully');
             } else {
-                console.log(`The path ${filePath} is not a file.`);
+                console.log('Photo file not found, using watermark');
+                photoDataUrl = watermarkDataUrl;
             }
         } catch (error) {
-            console.log(`File not found or error reading the file: ${filePath}`);
-            console.error(error);
+            console.log('Error loading student photo:', error.message);
+            console.log('Using watermark instead of student photo');
+            photoDataUrl = watermarkDataUrl;
         }
 
+        // Generate QR code and barcode
+        const qrDataUrl = await generateQRCode(qrData, qrOptions);
+        const barcodeDataUrl = await generateBarcode(registration);
+
+        // Add images to PDF
+        doc.addImage(barcodeDataUrl, 'PNG', 450, 70, 85, 14);
+        doc.addImage(qrDataUrl, 'JPEG', 70, 100, 85, 80);
+        doc.addImage(photoDataUrl, "JPEG", 450, 100, 85, 70);
+
+        // Add text fields
         doc.setFontSize(14);
         doc.text(`${registration}`, 70, 80);
         doc.text(`${titleCase(name)}`, 220, 180);
@@ -253,15 +261,13 @@ exports.issueCertificate = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send("Server Error");
-    } finally {
-        await client.close();
     }
 };
 
 // Delete certificate
 exports.deleteCertificate = async (req, res) => {
     try {
-        const certificate = await IssuedCertificate.findByIdAndDelete(req.params.id);
+        const certificate = await Result.findByIdAndDelete(req.params.id);
         if (!certificate) {
             return res.status(404).json({ message: 'Certificate not found' });
         }

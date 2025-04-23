@@ -21,46 +21,29 @@ async function generateBarcode(registration) {
     return canvas.toDataURL("image/png");
 }
 
-// Add new student
-exports.addStudent = async (req, res) => {
+// Helper function to title case
+function titleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+}
+
+// Create new student
+exports.createStudent = async (req, res) => {
     try {
-        const { date, name, fatherName, motherName, dob, age, email, phone, address, course, fees, duration, durationOption, reference } = req.body;
-        const files = req.files;
-        const photoPath = files['photo'] ? files['photo'][0].filename : null;
-        const marksheetPath = files['marksheet'] ? files['marksheet'][0].filename : null;
-        const aadhaarPath = files['aadhaar'] ? files['aadhaar'][0].filename : null;
-
-        const student = new Student({
-            date: new Date(date),
-            name,
-            fatherName,
-            motherName,
-            dob: new Date(dob),
-            age,
-            email,
-            phone,
-            address,
-            course,
-            fees,
-            duration,
-            durationOption,
-            photo: photoPath,
-            marksheet: marksheetPath,
-            aadhaar: aadhaarPath,
-            reference
-        });
-
-        const savedStudent = await student.save();
-        res.status(200).json({ message: 'Student added successfully', studentId: savedStudent.regId });
+        const student = new Student(req.body);
+        await student.save();
+        res.status(201).json(student);
     } catch (error) {
-        res.status(500).json({ message: 'Failed to add student', error });
+        res.status(400).json({ message: 'Failed to create student', error });
     }
 };
 
 // Get all students
 exports.getAllStudents = async (req, res) => {
     try {
-        const students = await Student.find();
+        const students = await Student.find().sort({ regId: -1 });
         res.json(students);
     } catch (error) {
         res.status(500).json({ message: 'Failed to retrieve students', error });
@@ -76,20 +59,24 @@ exports.getStudentById = async (req, res) => {
         }
         res.json(student);
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
+        res.status(500).json({ message: 'Failed to retrieve student', error });
     }
 };
 
 // Update student
 exports.updateStudent = async (req, res) => {
     try {
-        const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const student = await Student.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
         res.json(student);
     } catch (error) {
-        res.status(500).json({ message: 'Failed to update student', error });
+        res.status(400).json({ message: 'Failed to update student', error });
     }
 };
 
@@ -100,29 +87,41 @@ exports.deleteStudent = async (req, res) => {
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
-        res.status(200).json({ message: 'Student deleted successfully' });
+        res.json({ message: 'Student deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Failed to delete student', error });
     }
 };
 
-// Mark course as complete
+// Complete course
 exports.completeCourse = async (req, res) => {
     try {
-        const student = await Student.findById(req.params.id);
+        const student = await Student.findByIdAndUpdate(
+            req.params.id,
+            { status: 'completed' },
+            { new: true }
+        );
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
-        student.courseStatus = 'Complete';
-        await student.save();
-        res.status(200).json({ message: 'Course status updated to Complete', student });
+        res.json(student);
     } catch (error) {
-        res.status(500).json({ message: 'Failed to update course status', error });
+        res.status(500).json({ message: 'Failed to complete course', error });
+    }
+};
+
+// Download students
+exports.downloadStudents = async (req, res) => {
+    try {
+        const students = await Student.find().sort({ regId: -1 });
+        res.json(students);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to download students', error });
     }
 };
 
 // Download students as Excel
-exports.downloadStudents = async (req, res) => {
+exports.downloadStudentsAsExcel = async (req, res) => {
     try {
         const students = await Student.find();
         const workbook = new ExcelJS.Workbook();

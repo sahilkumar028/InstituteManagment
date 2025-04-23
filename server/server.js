@@ -4,6 +4,8 @@ const path = require('path');
 const connectDB = require('./config/database');
 const studentRoutes = require('./routes/studentRoutes');
 const issuedCertificateRoutes = require('./routes/issuedCertificateRoutes');
+const pdfRoutes = require('./routes/pdfRoutes');
+const logger = require('./middleware/logger');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -23,10 +25,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(logger);
 
 // Routes
 app.use('/', studentRoutes);
 app.use('/', issuedCertificateRoutes);
+app.use('/', pdfRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
