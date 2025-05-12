@@ -17,6 +17,11 @@ import ListOfStudentTest from './pages/ListOfStudentTest';
 import PDFSplitter from './pages/PDFSplitter';
 import TestCheck from './pages/TestCheck';
 import FeesPayment from './pages/FeesPayment';
+import PaymentSlipDesigner from './components/PaymentSlipDesigner';
+import ListEnquiry from './pages/ListEnquiry';
+import AddEnquiry from './pages/AddEnquiry';
+import ListResult from './pages/ListResult';
+import AddResult from './pages/AddResult';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -79,6 +84,11 @@ const App = () => {
                       <Route path="/TestCheck/:id" element={<TestCheck />} />
                       <Route path="/PDFSplitter" element={<PDFSplitter />} />
                       <Route path="/FeesPayment" element={<FeesPayment />} />
+                      <Route path="/PaymentSlipDesigner" element={<PaymentSlipDesigner />} />
+                      <Route path="/ListEnquiry" element={<ListEnquiry />} />
+                      <Route path="/AddEnquiry" element={<AddEnquiry />} />
+                      <Route path="/ListResult" element={<ListResult />} />
+                      <Route path="/AddResult" element={<AddResult />} />
                     </Routes>
                   </main>
                 </div>

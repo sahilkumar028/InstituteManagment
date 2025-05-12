@@ -5,6 +5,7 @@ const connectDB = require('./config/database');
 const studentRoutes = require('./routes/studentRoutes');
 const issuedCertificateRoutes = require('./routes/issuedCertificateRoutes');
 const pdfRoutes = require('./routes/pdfRoutes');
+const feesPaymentRoutes = require('./routes/feesPaymentRoutes');
 const logger = require('./middleware/logger');
 
 const app = express();
@@ -31,6 +32,7 @@ app.use(logger);
 app.use('/', studentRoutes);
 app.use('/', issuedCertificateRoutes);
 app.use('/', pdfRoutes);
+app.use('/', feesPaymentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
