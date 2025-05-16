@@ -55,7 +55,7 @@ const IssuedCertificateDownloads = () => {
     const handleDelete = async (registration) => {
         if (window.confirm("Are you sure you want to delete this certificate?")) {
             try {
-                await axios.delete(`${process.env.REACT_APP_API}/deletedata/registration/${registration}`);
+                await axios.delete(`${process.env.REACT_APP_API}/api/issued/${registration}`);
                 const updatedCertificates = certificates.filter((cert) => cert.registration !== registration);
                 setCertificates(updatedCertificates);
                 setFilteredCertificates(updatedCertificates);

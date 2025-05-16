@@ -311,7 +311,6 @@ const IssuedCertificate = () => {
                         className="form-control"
                         value={formValues.duration}
                         onChange={handleChange}
-                        disabled
                     />
                 </div>
                 {/* <div className="form-group">

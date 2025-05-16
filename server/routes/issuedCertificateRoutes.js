@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Result = require('../models/resultSchema');
 const Student = require('../models/Student');
-const { generateCertificate } = require('../controllers/issuedCertificateController');
 const fs = require('fs');
 
 // Get all certificates
@@ -108,13 +107,13 @@ router.post('/api/issued', async (req, res) => {
             name,
             fathersname,
             mothersname,
-            dob: new Date(dob),
+            dob,
             rollno,
             erollno,
             IssueSession,
             duration,
             certificate,
-            subjects: rows.map(row => ({
+            rows: rows.map(row => ({
                 subject: row.subject,
                 theory: parseInt(row.theory) || 0,
                 practical: parseInt(row.practical) || 0,
@@ -179,56 +178,6 @@ router.delete('/api/issued/:registration', async (req, res) => {
 });
 
 // Create certificate by registration number
-router.get('/api/createCertificate/:registration', async (req, res) => {
-    try {
-        const { registration } = req.params;
-        
-        // Find the student
-        const student = await Student.findOne({ regId: registration });
-        if (!student) {
-            return res.status(404).json({
-                success: false,
-                message: 'Student not found'
-            });
-        }
-
-        // Find the result/certificate
-        const result = await Result.findOne({ registration });
-        if (!result) {
-            return res.status(404).json({
-                success: false,
-                message: 'Result not found for this student'
-            });
-        }
-
-        // Generate the certificate
-        const certificatePath = await generateCertificate(registration);
-        
-        // Send the certificate file
-        res.download(certificatePath, `certificate_${registration}.pdf`, (err) => {
-            if (err) {
-                console.error('Error sending certificate:', err);
-                res.status(500).json({
-                    success: false,
-                    message: 'Error sending certificate file'
-                });
-            }
-            // Clean up the temporary file after sending
-            fs.unlink(certificatePath, (unlinkErr) => {
-                if (unlinkErr) {
-                    console.error('Error deleting temporary certificate:', unlinkErr);
-                }
-            });
-        });
-
-    } catch (error) {
-        console.error('Error creating certificate:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error creating certificate',
-            error: error.message
-        });
-    }
-});
+router.get('/api/createCertificate/:registration', require('../controllers/issuedCertificateController').issueCertificate);
 
 module.exports = router; 
