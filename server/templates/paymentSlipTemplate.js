@@ -1,11 +1,12 @@
 const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
 
 class PaymentSlipTemplate {
     constructor(doc, data) {
         this.doc = doc;
         this.data = data;
         this.slipWidth = 575;
-        this.slipHeight = 230;
+        this.slipHeight = 280; // Increased height for more details
         this.xStart = 10;
         this.tableLeft = this.xStart + 10;
         this.tableWidth = this.slipWidth - 20;
@@ -13,95 +14,83 @@ class PaymentSlipTemplate {
         this.colWidth = this.tableWidth / 4;
     }
 
-    drawHeader(y) {
+    async drawHeader(y) {
         this.doc.moveDown();
         this.doc.fontSize(40).text('SAHA INSTITUTE', { align: 'center' });
         this.doc.fontSize(10).text('Sector -3 Ballabgarh, Faridabad, (Haryana)', { align: 'center' });
+        this.doc.fontSize(12).text('Fee Receipt', { align: 'center' });
         this.doc.moveDown();
-        this.doc.moveDown();
-        return y + 70;
+        return y + 80;
     }
 
-    drawTableRow(col1, col2, col3, col4, y) {
+    drawTableRow(label1, value1, label2, value2, y) {
+        this.doc.fontSize(10);
+        
         // Draw row border
         this.doc.rect(this.tableLeft, y, this.tableWidth, this.rowHeight).stroke();
         
-        // Draw vertical lines between columns
-        for (let i = 1; i < 4; i++) {
-            this.doc.moveTo(this.tableLeft + (this.colWidth * i), y)
-               .lineTo(this.tableLeft + (this.colWidth * i), y + this.rowHeight)
-               .stroke();
-        }
-        
-        // Add content in each column
-        this.doc.text(col1, this.tableLeft + 5, y + 5, {
-            width: this.colWidth - 10,
-            align: 'left'
-        });
-        
-        this.doc.text(col2, this.tableLeft + this.colWidth + 5, y + 5, {
-            width: this.colWidth - 10,
-            align: 'left'
-        });
-        
-        this.doc.text(col3, this.tableLeft + (this.colWidth * 2) + 5, y + 5, {
-            width: this.colWidth - 10,
-            align: 'left'
-        });
-        
-        this.doc.text(col4, this.tableLeft + (this.colWidth * 3) + 5, y + 5, {
-            width: this.colWidth - 10,
-            align: 'left'
-        });
-        
+        // Draw vertical lines
+        this.doc.moveTo(this.tableLeft + this.colWidth, y)
+            .lineTo(this.tableLeft + this.colWidth, y + this.rowHeight)
+            .stroke();
+        this.doc.moveTo(this.tableLeft + this.colWidth * 2, y)
+            .lineTo(this.tableLeft + this.colWidth * 2, y + this.rowHeight)
+            .stroke();
+        this.doc.moveTo(this.tableLeft + this.colWidth * 3, y)
+            .lineTo(this.tableLeft + this.colWidth * 3, y + this.rowHeight)
+            .stroke();
+
+        // Add content
+        this.doc.text(label1, this.tableLeft + 5, y + 5, { width: this.colWidth - 10 });
+        this.doc.text(value1, this.tableLeft + this.colWidth + 5, y + 5, { width: this.colWidth - 10 });
+        this.doc.text(label2, this.tableLeft + this.colWidth * 2 + 5, y + 5, { width: this.colWidth - 10 });
+        this.doc.text(value2, this.tableLeft + this.colWidth * 3 + 5, y + 5, { width: this.colWidth - 10 });
+
         return y + this.rowHeight;
+    }
+
+    async drawQRCode(y) {
+        const qrData = {
+            receiptNo: this.data.receiptNumber,
+            studentId: this.data.student.regId,
+            amount: this.data.amount,
+            date: new Date(this.data.paymentDate).toISOString()
+        };
+
+        try {
+            const qrCodeDataUrl = await QRCode.toDataURL(JSON.stringify(qrData));
+            this.doc.image(qrCodeDataUrl, this.tableLeft + this.tableWidth - 100, y, { width: 80 });
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+        }
     }
 
     drawFooter(y) {
         this.doc.moveDown(2);
-        // this.doc.fontSize(8).text(
-        //     ,
-        //     { align: 'justify', width: this.tableWidth }
-        // );
-        this.doc.text(`Fees once paid are non-refundable.\n` +
-            `Students must countersign the receipt slip (matching the signature on the admission form) when depositing the fee. ` +
-            `Without this countersignature, no certificate will be issued, and the fee will not be recorded in the Saha account.\n` +
-            `Cutting or overwriting on forms is not allowed. Only cancellation is permitted.`, this.tableLeft + 5, y + 5, {
-            width: this.colWidth - 10,
-            align: 'left'
-        });
-    }
-    
-
-    drawDottedLine(y) {
-        const dashLength = 5;
-        const gapLength = 5;
-        const totalLength = dashLength + gapLength;
-        const numDashes = Math.floor(500 / totalLength);
-
-        for (let i = 0; i < numDashes; i++) {
-            const x = 50 + (i * totalLength);
-            this.doc.moveTo(x, y)
-               .lineTo(x + dashLength, y)
-               .stroke();
-        }
+        this.doc.fontSize(8).text(
+            'Fees once paid are non-refundable.\n' +
+            'Students must countersign the receipt slip (matching the signature on the admission form) when depositing the fee.\n' +
+            'Without this countersignature, no certificate will be issued, and the fee will not be recorded in the Saha account.\n' +
+            'Cutting or overwriting on forms is not allowed. Only cancellation is permitted.',
+            { align: 'justify', width: this.tableWidth }
+        );
     }
 
-    generateSlip(title, yStart) {
+    async generateSlip(title, yStart) {
         let y = yStart;
 
         // Draw border
         this.doc.rect(this.xStart, y, this.slipWidth, this.slipHeight).stroke();
 
         // Draw header
-        y = this.drawHeader(y);
+        y = await this.drawHeader(y);
 
         // Draw table rows
         y = this.drawTableRow(
-            'Receipt No: ' + this.data.receiptNumber,
-            '',
-            '',
-            'Date: ' + new Date(this.data.paymentDate).toLocaleDateString(),
+            'Receipt No:',
+            this.data.receiptNumber,
+            'Date:',
+            new Date(this.data.paymentDate).toLocaleDateString(),
             y
         );
         y = this.drawTableRow(
@@ -126,6 +115,13 @@ class PaymentSlipTemplate {
             y
         );
         y = this.drawTableRow(
+            'Payment Method:',
+            this.data.paymentMethod,
+            'Status:',
+            this.data.status,
+            y
+        );
+        y = this.drawTableRow(
             'Received Amount:',
             `₹${this.data.amount} Only`,
             'Balance Amount:',
@@ -139,6 +135,9 @@ class PaymentSlipTemplate {
             '',
             y
         );
+
+        // Draw QR Code
+        await this.drawQRCode(y - 100);
 
         // Draw footer
         this.drawFooter(y);

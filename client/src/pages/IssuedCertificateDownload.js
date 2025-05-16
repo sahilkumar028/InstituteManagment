@@ -2,73 +2,98 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const IssuedCertificateDownloads = () => {
-    const [students, setStudents] = useState([]);
+    const [certificates, setCertificates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filteredStudents, setFilteredStudents] = useState([]);
+    const [searchQuery, setSearchQuery] = useState({
+        name: '',
+        registration: '',
+        course: ''
+    });
+    const [filteredCertificates, setFilteredCertificates] = useState([]);
+    const [courses, setCourses] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
-        // Fetch issued documents data
-        const fetchIssuedDocuments = async () => {
+        // Fetch all certificates data
+        const fetchCertificates = async () => {
             try {
                 const response = await axios.get(process.env.REACT_APP_API + '/api/issued');
-                // Sort students by registration number (newest first)
-                const sortedStudents = response.data.sort((a, b) => b.registration - a.registration);
-                setStudents(sortedStudents);
-                setFilteredStudents(sortedStudents);
+                const certificatesData = Array.isArray(response.data.data) ? response.data.data : [];
+
+                // Sort certificates by issue date (newest first)
+                const sortedCertificates = certificatesData.sort((a, b) => {
+                    // Create date objects from the issue date components
+                    const dateA = new Date(a.issueDate || `${a.IssueYear}-${a.IssueMonth}-${a.IssueDay}`);
+                    const dateB = new Date(b.issueDate || `${b.IssueYear}-${b.IssueMonth}-${b.IssueDay}`);
+                    return dateB - dateA;
+                });
+
+                setCertificates(sortedCertificates);
+                setFilteredCertificates(sortedCertificates);
+
+                // Extract unique courses
+                const uniqueCourses = [...new Set(sortedCertificates.map(cert => cert.certificate))].filter(Boolean);
+                setCourses(uniqueCourses);
             } catch (error) {
                 setError(error.message);
+                setCertificates([]);
+                setFilteredCertificates([]);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchIssuedDocuments();
+        fetchCertificates();
     }, []);
 
     const handleDownload = (registration) => {
-        // Clean any existing certificate data
-        localStorage.removeItem(`certificate_${registration}`);
-        document.cookie = `certificate_${registration}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-        
-        // Open the PDF in a new tab
-        window.open(`${process.env.REACT_APP_API}/createCertificate/${registration}`, '_blank');
+        window.open(`${process.env.REACT_APP_API}/api/createCertificate/${registration}`, '_blank');
     };
 
     const handleDelete = async (registration) => {
-        if (window.confirm("Are you sure you want to delete this record?")) {
+        if (window.confirm("Are you sure you want to delete this certificate?")) {
             try {
-                // Clean certificate data before deleting
-                localStorage.removeItem(`certificate_${registration}`);
-                document.cookie = `certificate_${registration}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-                
-                await axios.delete(`http://192.168.1.250:5000/deletedata/registration/${registration}`);
-                const updatedStudents = students.filter((student) => student.registration !== registration);
-                setStudents(updatedStudents);
-                setFilteredStudents(updatedStudents);
-                alert('Record deleted successfully!');
+                await axios.delete(`${process.env.REACT_APP_API}/deletedata/registration/${registration}`);
+                const updatedCertificates = certificates.filter((cert) => cert.registration !== registration);
+                setCertificates(updatedCertificates);
+                setFilteredCertificates(updatedCertificates);
+                alert('Certificate deleted successfully!');
             } catch (error) {
-                console.error('Error deleting record:', error);
-                alert('Failed to delete the record.');
+                console.error('Error deleting certificate:', error);
+                alert('Failed to delete the certificate.');
             }
         }
     };
 
-    const handleSearch = (query) => {
-        setSearchQuery(query);
-        if (query.trim() === '') {
-            setFilteredStudents(students);
-        } else {
-            const lowerCaseQuery = query.toLowerCase();
-            const filtered = students.filter(
-                (student) =>
-                    student.registration.toString().includes(lowerCaseQuery) ||
-                    student.name.toLowerCase().includes(lowerCaseQuery) ||
-                    student.fathersname.toLowerCase().includes(lowerCaseQuery)
-            );
-            setFilteredStudents(filtered);
-        }
+    const handleSearch = (field, value) => {
+        const newSearchQuery = {
+            ...searchQuery,
+            [field]: value
+        };
+        setSearchQuery(newSearchQuery);
+        setCurrentPage(1); // Reset to first page on new search
+
+        const filtered = certificates.filter(cert => {
+            const nameMatch = cert.name.toLowerCase().includes(newSearchQuery.name.toLowerCase());
+            const registrationMatch = cert.registration.toString().includes(newSearchQuery.registration);
+            const courseMatch = newSearchQuery.course === '' || cert.certificate === newSearchQuery.course;
+
+            return nameMatch && registrationMatch && courseMatch;
+        });
+
+        setFilteredCertificates(filtered);
+    };
+
+    // Calculate pagination
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredCertificates.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredCertificates.length / itemsPerPage);
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
     };
 
     if (loading) return <div>Loading...</div>;
@@ -80,11 +105,32 @@ const IssuedCertificateDownloads = () => {
             <div className="mb-3">
                 <input
                     type="text"
-                    placeholder="Search by Registration, Name, or Father's Name"
-                    className="form-control"
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="Search by Name"
+                    className="form-control border-start-0"
+                    value={searchQuery.name}
+                    onChange={(e) => handleSearch('name', e.target.value)}
                 />
+            </div>
+            <div className="mb-3">
+                <input
+                    type="text"
+                    placeholder="Search by Registration No"
+                    className="form-control border-start-0"
+                    value={searchQuery.registration}
+                    onChange={(e) => handleSearch('registration', e.target.value)}
+                />
+            </div>
+            <div className="mb-3">
+                <select
+                    className="form-select border-start-0"
+                    value={searchQuery.course}
+                    onChange={(e) => handleSearch('course', e.target.value)}
+                >
+                    <option value="">All Courses</option>
+                    {courses.map((course, index) => (
+                        <option key={index} value={course}>{course}</option>
+                    ))}
+                </select>
             </div>
             <table className="table table-bordered">
                 <thead>
@@ -104,7 +150,7 @@ const IssuedCertificateDownloads = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredStudents.map((student, index) => (
+                    {filteredCertificates.map((student, index) => (
                         <tr key={student._id.$oid}>
                             <td>{index + 1}</td>
                             <td>

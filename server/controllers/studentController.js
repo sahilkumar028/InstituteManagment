@@ -32,11 +32,45 @@ function titleCase(str) {
 // Create new student
 exports.createStudent = async (req, res) => {
     try {
-        const student = new Student(req.body);
-        await student.save();
-        res.status(201).json(student);
+        const { date, name, fatherName, motherName, dob, age, email, phone, address, course, fees, duration, durationOption, reference } = req.body;
+        const files = req.files;
+
+        // Get file paths if files were uploaded
+        const photoPath = files['photo'] ? files['photo'][0].filename : null;
+        const marksheetPath = files['marksheet'] ? files['marksheet'][0].filename : null;
+        const aadhaarPath = files['aadhaar'] ? files['aadhaar'][0].filename : null;
+
+        const student = new Student({
+            date: new Date(date),
+            name,
+            fatherName,
+            motherName,
+            dob: new Date(dob),
+            age,
+            email,
+            phone,
+            address,
+            course,
+            fees,
+            duration,
+            durationOption,
+            photo: photoPath,
+            marksheet: marksheetPath,
+            aadhaar: aadhaarPath,
+            reference
+        });
+
+        const savedStudent = await student.save();
+        res.status(201).json({ 
+            message: 'Student added successfully', 
+            studentId: savedStudent.regId 
+        });
     } catch (error) {
-        res.status(400).json({ message: 'Failed to create student', error });
+        console.error('Error creating student:', error);
+        res.status(400).json({ 
+            message: 'Failed to create student', 
+            error: error.message 
+        });
     }
 };
 
@@ -177,11 +211,11 @@ exports.downloadStudentsAsExcel = async (req, res) => {
 };
 
 // Generate certificate
-exports.generateCertificate = async (req, res) => {
+exports.generateCertificate = async (registration) => {
     try {
-        const student = await Student.findOne({ regId: req.params.id });
+        const student = await Student.findOne({ regId: registration });
         if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+            throw new Error('Student not found');
         }
 
         // Create the PDF document
@@ -314,22 +348,13 @@ exports.generateCertificate = async (req, res) => {
         doc.text(`${new Date().getDate()}`, 240, 635);
         doc.text(`${new Date().toLocaleString('default', { month: 'long' })} ${new Date().getFullYear()}`, 355, 635);
 
-        // Save PDF to a file and send it to the user
+        // Save PDF to a file and return the path
         const pdfPath = `./uploads/certificate_${student.regId}.pdf`;
         doc.save(pdfPath);
-
-        // Send the generated PDF to the client
-        res.sendFile(path.resolve(pdfPath), (err) => {
-            if (err) {
-                console.error(err);
-                res.status(500).send("Error downloading the file");
-            }
-            // Remove the generated PDF file after sending it
-            fs.unlinkSync(pdfPath);
-        });
+        return pdfPath;
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Failed to generate certificate', error });
+        throw error;
     }
 }; 

@@ -275,4 +275,163 @@ exports.deleteCertificate = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Failed to delete certificate', error });
     }
+};
+
+// Generate certificate
+exports.generateCertificate = async (registration) => {
+    try {
+        const student = await Student.findOne({ regId: registration });
+        if (!student) {
+            throw new Error('Student not found');
+        }
+
+        // Find the result/certificate
+        const result = await Result.findOne({ registration });
+        if (!result) {
+            throw new Error('Result not found for this student');
+        }
+
+        // Create the PDF document
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'pt',
+            format: 'a4',
+            margin: 1
+        });
+
+        const qrData = {
+            registration: student.regId,
+            name: student.name,
+            rollno: student.regId,
+            erollno: student.regId,
+            IssueSession: result.IssueSession,
+            duration: student.duration,
+            performance: result.performance,
+            Grade: result.Grade,
+            IssueDay: result.IssueDay,
+            IssueMonth: result.IssueMonth,
+            IssueYear: result.IssueYear
+        };
+
+        const qrOptions = {
+            errorCorrectionLevel: 'H',
+            type: 'image/jpeg',
+            width: 200,
+            margin: 2
+        };
+
+        // Read and convert the student's photo to base64
+        const filename = student.photo.split('/').pop();
+        const filePath = 'uploads/' + filename;
+
+        try {
+            const stats = fs.lstatSync(filePath);
+
+            if (stats.isFile()) {
+                const buffer = fs.readFileSync(filePath);
+                const base64String = buffer.toString('base64');
+                const dataUrl = `data:image/jpeg;base64,${base64String}`;
+
+                const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrData), qrOptions);
+                console.log('QR Code Data URL:', qrDataUrl);
+
+                const barcodeDataUrl = await generateBarcode(student.regId);
+                doc.addImage(barcodeDataUrl, 'PNG', 450, 70, 85, 14);
+
+                // Add the QR code to the PDF
+                doc.addImage(qrDataUrl, 'JPEG', 70, 100, 85, 80);
+
+                // Add the image to the document
+                doc.addImage(dataUrl, "JPEG", 450, 100, 85, 70);
+            } else {
+                console.log(`The path ${filePath} is not a file.`);
+            }
+        } catch (error) {
+            console.log(`File not found or error reading the file: ${filePath}`);
+            console.error(error);
+        }
+
+        // Add text fields to the PDF
+        doc.setFontSize(14);
+        doc.text(`${student.regId}`, 70, 80);
+        doc.text(`${student.name}`, 220, 180);
+        doc.text(`${student.fatherName}`, 220, 205);
+        doc.text(`${student.motherName}`, 220, 230);
+        doc.text(`${new Date(student.dob).toLocaleDateString()}`, 440, 230);
+        doc.text(`${student.regId}`, 145, 260);
+        doc.text(`${student.regId}`, 310, 260);
+        doc.text(`${result.IssueSession}`, 440, 260);
+        doc.text(`${student.duration}`, 220, 290);
+        doc.text(`${result.performance}`, 345, 340);
+
+        doc.setFont("helvetica", "bold");
+        doc.text(`Certificate of Completion`, 300, 430, null, null, "center");
+
+        // Table Headers
+        const tableStartY = 465;
+        const pageWidth = doc.internal.pageSize.width;
+        const rectangleWidth = 440;
+        const x = (pageWidth - rectangleWidth) / 2;
+        doc.setFontSize(11);
+        doc.setLineWidth(2);
+        doc.rect(x, tableStartY, rectangleWidth, 15);
+        doc.text("S.NO", 85, tableStartY + 10);
+        doc.text("Subject", 120, tableStartY + 10);
+        doc.text("Total", 320, tableStartY + 10);
+        doc.text("Theory", 355, tableStartY + 10);
+        doc.text("Practical", 400, tableStartY + 10);
+        doc.text("Obtained", 455, tableStartY + 10);
+
+        // Add Rows
+        let totalTheory = 0;
+        let totalPractical = 0;
+        let totalObtained = 0;
+        
+        // Get subjects from either rows or subjects array
+        const subjects = result.rows || result.subjects || [];
+        const maxRows = subjects.length;
+        let maxMarks = 0;
+        doc.setFont("times", "normal");
+
+        // Add subject rows
+        subjects.forEach((subject, index) => {
+            const rowY = tableStartY + 15 + index * 15;
+            doc.rect(x, rowY, rectangleWidth, 15);
+            doc.text(`${index + 1}`, 85, rowY + 10);
+            doc.text(subject.subject || '', 120, rowY + 10);
+            doc.text(`100`, 320, rowY + 10);
+            doc.text(`${subject.theory || 0}`, 355, rowY + 10);
+            doc.text(`${subject.practical || 0}`, 400, rowY + 10);
+            doc.text(`${subject.obtained || 0}`, 455, rowY + 10);
+
+            maxMarks += 100;
+            totalTheory += parseInt(subject.theory || 0);
+            totalPractical += parseInt(subject.practical || 0);
+            totalObtained += parseInt(subject.obtained || 0);
+        });
+
+        // Add Total Row
+        const totalRowY = tableStartY + 15 + maxRows * 15;
+        doc.rect(x, totalRowY, rectangleWidth, 15);
+        doc.text("Total", 120, totalRowY + 10);
+        doc.text(`${maxMarks}`, 320, totalRowY + 10);
+        doc.text(`${totalTheory}`, 355, totalRowY + 10);
+        doc.text(`${totalPractical}`, 400, totalRowY + 10);
+        doc.text(`${totalObtained}`, 455, totalRowY + 10);
+
+        // Add Issue Details
+        doc.setFontSize(16);
+        doc.text(`${result.Grade}`, 240, 610);
+        doc.text(`${result.IssueDay}`, 240, 635);
+        doc.text(`${result.IssueMonth} ${result.IssueYear}`, 355, 635);
+
+        // Save PDF to a file and return the path
+        const pdfPath = `./uploads/certificate_${student.regId}.pdf`;
+        doc.save(pdfPath);
+        return pdfPath;
+
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
 }; 

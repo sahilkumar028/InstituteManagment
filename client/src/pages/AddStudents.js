@@ -28,6 +28,7 @@ const AddStudents = () => {
   
 
   const [registrationId, setRegistrationId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const courses = [
     { name: 'Office Automation', fee: 3600, duration: 3 },
@@ -120,6 +121,7 @@ const AddStudents = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
   
     const formData = new FormData();
     Object.keys(studentData).forEach(key => {
@@ -136,35 +138,51 @@ const AddStudents = () => {
         body: formData
       });
       const result = await response.json();
+      console.log('Server response:', result); // Debug log
   
       if (response.ok) {
-        setRegistrationId(result.studentId); // Store the registration ID
-        setStudentData({  // Reset student data state
-          date: '',
-          name: '',
-          fatherName: '',
-          motherName: '',
-          dob: '',
-          age: '',
-          email: '',
-          phone: '',
-          address: '',
-          course: '',
-          fees: '',
-          duration: '',
-          durationOption: '',
-          photo: null,
-          marksheet: null,
-          aadhaar: null,
-          reference: ''
-        });
-        localStorage.removeItem('studentData'); // Clear localStorage
+        if (result.studentId) {
+          setRegistrationId(result.studentId);
+          console.log('Registration ID set:', result.studentId); // Debug log
+          
+          // Wait for 5 seconds before resetting the form
+          setTimeout(() => {
+            setStudentData({  // Reset student data state
+              date: '',
+              name: '',
+              fatherName: '',
+              motherName: '',
+              dob: '',
+              age: '',
+              email: '',
+              phone: '',
+              address: '',
+              course: '',
+              fees: '',
+              duration: '',
+              durationOption: '',
+              photo: null,
+              marksheet: null,
+              aadhaar: null,
+              reference: ''
+            });
+            localStorage.removeItem('studentData'); // Clear localStorage
+            setIsSubmitting(false);
+          }, 5000);
+        } else {
+          console.error('No studentId in response:', result); // Debug log
+          alert('Registration successful but no registration ID received');
+          setIsSubmitting(false);
+        }
       } else {
-        alert(`Error: ${result.message}`);
+        console.error('Server error:', result); // Debug log
+        alert(`Error: ${result.message || 'Failed to add student'}`);
+        setIsSubmitting(false);
       }
     } catch (error) {
       console.error('Error:', error);
       alert('An error occurred while adding the student');
+      setIsSubmitting(false);
     }
   };
   
@@ -295,12 +313,18 @@ const AddStudents = () => {
           </div>
         </div>
 
-        <button type="submit" className="btn btn-primary">Submit</button>
+        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+          {isSubmitting ? 'Submitting...' : 'Submit'}
+        </button>
       </form>
 
       {registrationId && (
         <div className="alert alert-success mt-3">
-          Student successfully registered! Registration ID: {registrationId}
+          <h4 className="alert-heading">Student Registration Successful!</h4>
+          <p>Registration ID: <strong>{registrationId}</strong></p>
+          <hr />
+          <p className="mb-0">Please save this registration number for future reference. Form will reset in 5 seconds.</p>
+          
         </div>
       )}
     </div>

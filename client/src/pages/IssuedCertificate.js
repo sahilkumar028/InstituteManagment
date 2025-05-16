@@ -157,23 +157,43 @@ const IssuedCertificate = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch(process.env.REACT_APP_API+'/savedata', {
+            console.log('1. Starting form submission...');
+            console.log('2. Current form values:', formValues);
+            console.log('3. Current rows data:', rows);
+
+            const requestData = {
+                ...formValues,
+                rows
+            };
+            console.log('4. Prepared request data:', requestData);
+
+            console.log('5. Sending request to:', process.env.REACT_APP_API+'/api/issued');
+            const response = await fetch(process.env.REACT_APP_API+'/api/issued', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    ...formValues,
-                    rows // Include rows data in the request
-                }),
+                body: JSON.stringify(requestData),
             });
+            
+            console.log('6. Response status:', response.status);
+            console.log('7. Response headers:', Object.fromEntries(response.headers.entries()));
+            
+            const responseData = await response.json();
+            console.log('8. Response data:', responseData);
+
             if (response.ok) {
+                console.log('9. Success: Data saved successfully');
                 alert('Data saved successfully!');
             } else {
-                alert('Failed to save data');
+                console.error('9. Error: Failed to save data. Status:', response.status);
+                console.error('Error details:', responseData);
+                alert('Failed to save data: ' + (responseData.message || 'Unknown error'));
             }
         } catch (error) {
-            alert('An error occurred while saving data');
+            console.error('Error occurred during submission:', error);
+            console.error('Error stack:', error.stack);
+            alert('An error occurred while saving data: ' + error.message);
         }
     };
 

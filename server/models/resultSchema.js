@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const resultSchema = new mongoose.Schema({
     photo: {
         type: String,
-        required: true
+        required: false
     },
     registration: {
         type: String,

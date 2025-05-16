@@ -10,10 +10,33 @@ const StudentList = () => {
     const navigate = useNavigate();
     const [searchName, setSearchName] = useState('');
     const [searchFatherName, setSearchFatherName] = useState('');
+    const [searchRegId, setSearchRegId] = useState('');
+    const [selectedCourse, setSelectedCourse] = useState('');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const studentsPerPage = 10;
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const courses = [
+        'Office Automation',
+        'Diploma in Computer Application and Accounting',
+        'Advance Diploma in Computer Application',
+        'Advance Excel',
+        'Tally/Tally Prime',
+        'Auto CAD',
+        'Web designing',
+        'Web Development using MERN',
+        'Web Development using Java Springboot',
+        'C Language',
+        'C++ Language',
+        'Core Java',
+        'Advance Java',
+        'Python',
+        'Data Structure and Algorithms',
+        'Spoken',
+        'Certificate Courses'
+    ];
 
     useEffect(() => {
         const fetchStudents = async () => {
@@ -31,21 +54,93 @@ const StudentList = () => {
     }, []);
 
     const handleDownloadExcel = async () => {
+        console.log('=== Starting Excel Download Process ===');
         try {
-            const response = await axios.get(`${process.env.REACT_APP_API}/api/students/download`, {
-                responseType: 'blob', // Important for downloading files
+            setIsDownloading(true);
+            console.log('Making API request to download Excel...');
+            
+            const response = await axios.get(
+                `${process.env.REACT_APP_API}/api/students/download-excel`,
+                {
+                    responseType: 'blob',
+                    headers: {
+                        'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    },
+                    timeout: 30000 // 30 second timeout
+                }
+            );
+
+            console.log('Received response from server:', {
+                status: response.status,
+                headers: response.headers,
+                dataSize: response.data.size
             });
 
-            const url = window.URL.createObjectURL(new Blob([response.data]));
+            if (!response.data || response.data.size === 0) {
+                throw new Error('Received empty response from server');
+            }
+
+            // Create a blob from the response data
+            console.log('Creating blob from response data...');
+            const blob = new Blob([response.data], { 
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+            });
+            
+            // Create a URL for the blob
+            console.log('Creating object URL...');
+            const url = window.URL.createObjectURL(blob);
+            
+            // Create a temporary link element
+            console.log('Creating download link...');
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'students.xlsx'); // File name
+            const fileName = `students-list-${new Date().toISOString().split('T')[0]}.xlsx`;
+            link.download = fileName;
+            
+            // Append to body, click, and remove
+            console.log('Triggering download...');
             document.body.appendChild(link);
-            link.click(); // Trigger download
-            link.remove(); // Clean up
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up the URL
+            console.log('Cleaning up...');
+            window.URL.revokeObjectURL(url);
+
+            console.log('=== Excel Download Process Completed Successfully ===');
         } catch (error) {
-            console.error('Error downloading Excel file:', error);
-            alert('Failed to download the Excel sheet.');
+            console.error('=== Error in Excel Download Process ===');
+            console.error('Error details:', error);
+            
+            let errorMessage = 'Failed to download the Excel sheet. ';
+            
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.error('Server response:', {
+                    status: error.response.status,
+                    data: error.response.data,
+                    headers: error.response.headers
+                });
+                
+                if (error.response.status === 404) {
+                    errorMessage += 'No students found to export.';
+                } else if (error.response.status === 500) {
+                    errorMessage += 'Server error occurred. Please try again later.';
+                }
+            } else if (error.request) {
+                // The request was made but no response was received
+                console.error('No response received:', error.request);
+                errorMessage += 'No response from server. Please check your connection.';
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.error('Request setup error:', error.message);
+                errorMessage += error.message;
+            }
+            
+            alert(errorMessage);
+        } finally {
+            setIsDownloading(false);
         }
     };
 
@@ -88,17 +183,19 @@ const StudentList = () => {
 
     const filterStudents = () => {
         return students.filter(student => {
-          const matchesName = student.name.toLowerCase().includes(searchName.toLowerCase());
-          const matchesFatherName = searchFatherName ? student.fatherName.toLowerCase().includes(searchFatherName.toLowerCase()) : true;
+            const matchesName = student.name.toLowerCase().includes(searchName.toLowerCase());
+            const matchesFatherName = searchFatherName ? student.fatherName.toLowerCase().includes(searchFatherName.toLowerCase()) : true;
+            const matchesRegId = searchRegId ? student.regId.toString().includes(searchRegId) : true;
+            const matchesCourse = selectedCourse ? student.course === selectedCourse : true;
     
-          const studentDate = new Date(student.date);
-          const from = fromDate ? new Date(fromDate) : null;
-          const to = toDate ? new Date(toDate) : null;
-          const matchesDate = (!from || studentDate >= from) && (!to || studentDate <= to);
+            const studentDate = new Date(student.date);
+            const from = fromDate ? new Date(fromDate) : null;
+            const to = toDate ? new Date(toDate) : null;
+            const matchesDate = (!from || studentDate >= from) && (!to || studentDate <= to);
     
-          return matchesName && matchesFatherName && matchesDate;
+            return matchesName && matchesFatherName && matchesRegId && matchesCourse && matchesDate;
         }).sort((a, b) => new Date(b.date) - new Date(a.date));
-      };
+    };
 
     const filteredStudents = filterStudents();
 
@@ -122,7 +219,7 @@ const StudentList = () => {
 
             <div className="mb-3 search-card p-2">
                 <div className="row">
-                    <div className="col-md-6">
+                    <div className="col-md-4">
                         <label htmlFor="Name" className="form-label f_20">Name</label>
                         <input
                             type="text"
@@ -132,7 +229,7 @@ const StudentList = () => {
                             className="form-control mb-2"
                         />
                     </div>
-                    <div className="col-md-6">
+                    <div className="col-md-4">
                         <label htmlFor="Father's Name" className="form-label f_20">Father's Name</label>
                         <input
                             type="text"
@@ -142,31 +239,68 @@ const StudentList = () => {
                             className="form-control mb-2"
                         />
                     </div>
-                    <div className="col-md-3">
-                        <label className="form-label">From Date</label>
+                    <div className="col-md-4">
+                        <label htmlFor="Registration" className="form-label f_20">Registration No.</label>
                         <input
-                        type="date"
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                        className="form-control"
-                        />
-                    </div>
-
-                    <div className="col-md-3">
-                        <label className="form-label">To Date</label>
-                        <input
-                        type="date"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                        className="form-control"
+                            type="text"
+                            placeholder="Search by Registration No."
+                            value={searchRegId}
+                            onChange={(e) => setSearchRegId(e.target.value)}
+                            className="form-control mb-2"
                         />
                     </div>
                 </div>
-            
+                <div className="row">
+                    <div className="col-md-4">
+                        <label htmlFor="Course" className="form-label f_20">Course</label>
+                        <select
+                            className="form-control mb-2"
+                            value={selectedCourse}
+                            onChange={(e) => setSelectedCourse(e.target.value)}
+                        >
+                            <option value="">All Courses</option>
+                            {courses.map((course, index) => (
+                                <option key={index} value={course}>{course}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="col-md-4">
+                        <label className="form-label f_20">From Date</label>
+                        <input
+                            type="date"
+                            value={fromDate}
+                            onChange={(e) => setFromDate(e.target.value)}
+                            className="form-control"
+                        />
+                    </div>
+                    <div className="col-md-4">
+                        <label className="form-label f_20">To Date</label>
+                        <input
+                            type="date"
+                            value={toDate}
+                            onChange={(e) => setToDate(e.target.value)}
+                            className="form-control"
+                        />
+                    </div>
+                </div>
 
                 <div className="d-flex justify-content-end mb-3">
-                    <button onClick={handleDownloadExcel} className="btn btn-success">
-                        <i className="fas fa-download"></i> Download Excel
+                    <button 
+                        onClick={handleDownloadExcel} 
+                        className="btn btn-success"
+                        disabled={isDownloading}
+                    >
+                        {isDownloading ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Downloading...
+                            </>
+                        ) : (
+                            <>
+                                <i className="fas fa-download me-2"></i>
+                                Download Excel
+                            </>
+                        )}
                     </button>
                 </div>
                 <div className='overflow-auto '>
