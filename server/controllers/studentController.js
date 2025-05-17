@@ -130,17 +130,32 @@ exports.deleteStudent = async (req, res) => {
 // Complete course
 exports.completeCourse = async (req, res) => {
     try {
+        const { courseStatus } = req.body;
         const student = await Student.findByIdAndUpdate(
             req.params.id,
-            { status: 'completed' },
-            { new: true }
+            { courseStatus },
+            { new: true, runValidators: true }
         );
+        
         if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Student not found' 
+            });
         }
-        res.json(student);
+        
+        res.json({
+            success: true,
+            data: student,
+            message: `Course status updated to ${courseStatus}`
+        });
     } catch (error) {
-        res.status(500).json({ message: 'Failed to complete course', error });
+        console.error('Error updating course status:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to update course status',
+            error: error.message 
+        });
     }
 };
 

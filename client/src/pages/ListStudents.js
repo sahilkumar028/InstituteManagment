@@ -146,13 +146,22 @@ const StudentList = () => {
 
     const handleComplete = async (id) => {
         try {
-            await axios.put(`${process.env.REACT_APP_API}/api/students/${id}/complete`);
-            setStudents(students.map(student =>
-                student._id === id ? { ...student, courseStatus: 'Complete' } : student
-            ));
-            alert('Course status updated to Complete');
+            const student = students.find(s => s._id === id);
+            const newStatus = student.courseStatus === 'Complete' ? 'Not Complete' : 'Complete';
+            
+            const response = await axios.put(`${process.env.REACT_APP_API}/api/students/${id}/complete`, {
+                courseStatus: newStatus
+            });
+            
+            if (response.data) {
+                setStudents(students.map(student =>
+                    student._id === id ? { ...student, courseStatus: newStatus } : student
+                ));
+                alert(`Course status updated to ${newStatus}`);
+            }
         } catch (error) {
             console.error('Failed to update course status:', error);
+            alert('Failed to update course status. Please try again.');
         }
     };
 
@@ -367,6 +376,12 @@ const StudentList = () => {
                                 <td>{student.courseStatus}</td>
                                 <td>
                                     <div className="btn-group" role="group">
+                                        <button
+                                            className={`btn ${student.courseStatus === 'Complete' ? 'btn-success' : 'btn-warning'} btn-sm`}
+                                            onClick={() => handleComplete(student._id)}
+                                        >
+                                            {student.courseStatus === 'Complete' ? 'Complete' : 'Not Complete'}
+                                        </button>
                                         <button
                                             className="btn btn-primary btn-sm"
                                             onClick={() => handleUpdate(student._id)}

@@ -164,12 +164,12 @@ exports.issueCertificate = async (req, res) => {
 
         // Add images to PDF
         doc.addImage(barcodeDataUrl, 'PNG', 450, 70, 85, 14);
-        doc.addImage(qrDataUrl, 'JPEG', 70, 100, 85, 80);
+        doc.addImage(qrDataUrl, 'JPEG', 80, 100, 85, 80);
         doc.addImage(photoDataUrl, "JPEG", 450, 100, 85, 70);
 
         // Add text fields
         doc.setFontSize(14);
-        doc.text(`${registration}`, 70, 80);
+        doc.text(`${registration}`, 80, 80);
         doc.text(`${titleCase(name)}`, 220, 180);
         doc.text(`${titleCase(fathersname)}`, 220, 205);
         doc.text(`${titleCase(mothersname)}`, 220, 230);
@@ -187,16 +187,16 @@ exports.issueCertificate = async (req, res) => {
         const tableStartY = 465;
         const pageWidth = doc.internal.pageSize.width;
         const rectangleWidth = 440;
-        const x = (pageWidth - rectangleWidth) / 2;
+        const x = ((pageWidth - rectangleWidth) / 2) + 10;
         doc.setFontSize(11);
         doc.setLineWidth(2);
         doc.rect(x, tableStartY, rectangleWidth, 15);
-        doc.text("S.NO", 85, tableStartY + 10);
-        doc.text("Subject", 120, tableStartY + 10);
-        doc.text("Total", 320, tableStartY + 10);
-        doc.text("Theory", 355, tableStartY + 10);
-        doc.text("Practical", 400, tableStartY + 10);
-        doc.text("Obtained", 455, tableStartY + 10);
+        doc.text("S.NO", 95, tableStartY + 10);
+        doc.text("Subject", 130, tableStartY + 10);
+        doc.text("Total", 330, tableStartY + 10);
+        doc.text("Theory", 365, tableStartY + 10);
+        doc.text("Practical", 410, tableStartY + 10);
+        doc.text("Obtained", 465, tableStartY + 10);
 
         // Add Rows
         let totalTheory = 0;
@@ -211,12 +211,12 @@ exports.issueCertificate = async (req, res) => {
             doc.rect(x, rowY, rectangleWidth, 15);
 
             if (rows[index] !== undefined) {
-                doc.text(`${index + 1}`, 85, rowY + 10);
-                doc.text(`${titleCase(rows[index].subject) || ""}`, 120, rowY + 10);
-                doc.text(`100`, 320, rowY + 10);
-                doc.text(`${rows[index].theory || ""}`, 355, rowY + 10);
-                doc.text(`${rows[index].practical || ""}`, 400, rowY + 10);
-                doc.text(`${rows[index].obtained || ""}`, 455, rowY + 10);
+                doc.text(`${index + 1}`, 95, rowY + 10);
+                doc.text(`${titleCase(rows[index].subject) || ""}`, 130, rowY + 10);
+                doc.text(`100`, 330, rowY + 10);
+                doc.text(`${rows[index].theory || ""}`, 365, rowY + 10);
+                doc.text(`${rows[index].practical || ""}`, 410, rowY + 10);
+                doc.text(`${rows[index].obtained || ""}`, 465, rowY + 10);
 
                 maxMarks += 100;
                 totalTheory += rows[index].theory ? parseInt(rows[index].theory, 10) : 0;
@@ -228,11 +228,11 @@ exports.issueCertificate = async (req, res) => {
         // Add Total Row
         const totalRowY = tableStartY + 15 + maxRows * 15;
         doc.rect(x, totalRowY, rectangleWidth, 15);
-        doc.text("Total", 120, totalRowY + 10);
+        doc.text("Total", 130, totalRowY + 10);
         doc.text(`${maxMarks}`, 320, totalRowY + 10);
-        doc.text(`${totalTheory}`, 355, totalRowY + 10);
-        doc.text(`${totalPractical}`, 400, totalRowY + 10);
-        doc.text(`${totalObtained}`, 455, totalRowY + 10);
+        doc.text(`${totalTheory}`, 365, totalRowY + 10);
+        doc.text(`${totalPractical}`, 410, totalRowY + 10);
+        doc.text(`${totalObtained}`, 465, totalRowY + 10);
 
         // Add Issue Details
         doc.setFontSize(16);

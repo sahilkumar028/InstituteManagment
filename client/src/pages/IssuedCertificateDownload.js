@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './IssuedCertificateDownload.css';
 
 const IssuedCertificateDownloads = () => {
     const [certificates, setCertificates] = useState([]);
@@ -16,37 +17,35 @@ const IssuedCertificateDownloads = () => {
     const itemsPerPage = 10;
 
     useEffect(() => {
-        // Fetch all certificates data
-        const fetchCertificates = async () => {
-            try {
-                const response = await axios.get(process.env.REACT_APP_API + '/api/issued');
-                const certificatesData = Array.isArray(response.data.data) ? response.data.data : [];
-
-                // Sort certificates by issue date (newest first)
-                const sortedCertificates = certificatesData.sort((a, b) => {
-                    // Create date objects from the issue date components
-                    const dateA = new Date(a.issueDate || `${a.IssueYear}-${a.IssueMonth}-${a.IssueDay}`);
-                    const dateB = new Date(b.issueDate || `${b.IssueYear}-${b.IssueMonth}-${b.IssueDay}`);
-                    return dateB - dateA;
-                });
-
-                setCertificates(sortedCertificates);
-                setFilteredCertificates(sortedCertificates);
-
-                // Extract unique courses
-                const uniqueCourses = [...new Set(sortedCertificates.map(cert => cert.certificate))].filter(Boolean);
-                setCourses(uniqueCourses);
-            } catch (error) {
-                setError(error.message);
-                setCertificates([]);
-                setFilteredCertificates([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchCertificates();
     }, []);
+
+    const fetchCertificates = async () => {
+        try {
+            const response = await axios.get(process.env.REACT_APP_API + '/api/issued');
+            const certificatesData = Array.isArray(response.data.data) ? response.data.data : [];
+
+            // Sort certificates by issue date (newest first)
+            const sortedCertificates = certificatesData.sort((a, b) => {
+                const dateA = new Date(a.issueDate || `${a.IssueYear}-${a.IssueMonth}-${a.IssueDay}`);
+                const dateB = new Date(b.issueDate || `${b.IssueYear}-${b.IssueMonth}-${b.IssueDay}`);
+                return dateB - dateA;
+            });
+
+            setCertificates(sortedCertificates);
+            setFilteredCertificates(sortedCertificates);
+
+            // Extract unique courses
+            const uniqueCourses = [...new Set(sortedCertificates.map(cert => cert.certificate))].filter(Boolean);
+            setCourses(uniqueCourses);
+        } catch (error) {
+            setError(error.message);
+            setCertificates([]);
+            setFilteredCertificates([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleDownload = (registration) => {
         window.open(`${process.env.REACT_APP_API}/api/createCertificate/${registration}`, '_blank');
@@ -96,102 +95,162 @@ const IssuedCertificateDownloads = () => {
         setCurrentPage(pageNumber);
     };
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
+    if (loading) return <div className="loading">Loading...</div>;
+    if (error) return <div className="error">Error: {error}</div>;
 
     return (
-        <div className="mt-2">
-            <h2 className="mb-3">Issued Documents</h2>
-            <div className="mb-3">
-                <input
-                    type="text"
-                    placeholder="Search by Name"
-                    className="form-control border-start-0"
-                    value={searchQuery.name}
-                    onChange={(e) => handleSearch('name', e.target.value)}
-                />
+        <div className="certificate-container">
+            <h2 className="page-title">Issued Documents</h2>
+            
+            {/* Search Section */}
+            <div className="search-section">
+                <div className="search-group">
+                    <input
+                        type="text"
+                        placeholder="Search by Name"
+                        className="search-input"
+                        value={searchQuery.name}
+                        onChange={(e) => handleSearch('name', e.target.value)}
+                    />
+                </div>
+                <div className="search-group">
+                    <input
+                        type="text"
+                        placeholder="Search by Registration No"
+                        className="search-input"
+                        value={searchQuery.registration}
+                        onChange={(e) => handleSearch('registration', e.target.value)}
+                    />
+                </div>
+                <div className="search-group">
+                    <select
+                        className="search-select"
+                        value={searchQuery.course}
+                        onChange={(e) => handleSearch('course', e.target.value)}
+                    >
+                        <option value="">All Courses</option>
+                        {courses.map((course, index) => (
+                            <option key={index} value={course}>{course}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
-            <div className="mb-3">
-                <input
-                    type="text"
-                    placeholder="Search by Registration No"
-                    className="form-control border-start-0"
-                    value={searchQuery.registration}
-                    onChange={(e) => handleSearch('registration', e.target.value)}
-                />
-            </div>
-            <div className="mb-3">
-                <select
-                    className="form-select border-start-0"
-                    value={searchQuery.course}
-                    onChange={(e) => handleSearch('course', e.target.value)}
-                >
-                    <option value="">All Courses</option>
-                    {courses.map((course, index) => (
-                        <option key={index} value={course}>{course}</option>
-                    ))}
-                </select>
-            </div>
-            <table className="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>S. No.</th>
-                        <th>Photo</th>
-                        <th>Name</th>
-                        <th>Registration No.</th>
-                        <th>Father's Name</th>
-                        <th>Mother's Name</th>
-                        <th>Date of Birth</th>
-                        <th>Performance</th>
-                        <th>Grade</th>
-                        <th>Duration</th>
-                        <th>Issued Documents</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredCertificates.map((student, index) => (
-                        <tr key={student._id.$oid}>
-                            <td>{index + 1}</td>
-                            <td>
-                                <img
-                                    src={student.photo}
-                                    alt={student.name}
-                                    style={{ width: '50px', height: '50px' }}
-                                />
-                            </td>
-                            <td>{student.name}</td>
-                            <td>{student.registration}</td>
-                            <td>{student.fathersname}</td>
-                            <td>{student.mothersname}</td>
-                            <td>{new Date(student.dob).toLocaleDateString()}</td>
-                            <td>{student.performance}</td>
-                            <td>{student.Grade}</td>
-                            <td>{student.duration}</td>
-                            <td>
-                                <div className="d-flex flex-column">
-                                    {student.certificate && (
-                                        <button
-                                            className="btn btn-primary btn-sm mb-2"
-                                            onClick={() => handleDownload(student.registration)}
-                                        >
-                                            Download Certificate
-                                        </button>
-                                    )}
-                                </div>
-                            </td>
-                            <td>
-                                <button
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() => handleDelete(student.registration)}
-                                >
-                                    Delete
-                                </button>
-                            </td>
+
+            {/* Table Section */}
+            <div className="table-container">
+                <table className="certificate-table">
+                    <thead>
+                        <tr>
+                            <th>S. No.</th>
+                            <th>Photo</th>
+                            <th>Name</th>
+                            <th>Registration No.</th>
+                            <th>Father's Name</th>
+                            <th>Mother's Name</th>
+                            <th>Date of Birth</th>
+                            <th>Performance</th>
+                            <th>Grade</th>
+                            <th>Duration</th>
+                            <th>Issued Documents</th>
+                            <th>Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {currentItems.map((student, index) => (
+                            <tr key={student._id}>
+                                <td>{indexOfFirstItem + index + 1}</td>
+                                <td>
+                                    <img
+                                        src={student.photo}
+                                        alt={student.name}
+                                        className="student-photo"
+                                    />
+                                </td>
+                                <td>{student.name}</td>
+                                <td>{student.registration}</td>
+                                <td>{student.fathersname}</td>
+                                <td>{student.mothersname}</td>
+                                <td>{new Date(student.dob).toLocaleDateString()}</td>
+                                <td>{student.performance}</td>
+                                <td>{student.Grade}</td>
+                                <td>{student.duration}</td>
+                                <td>
+                                    <div className="action-buttons">
+                                        {student.certificate && (
+                                            <button
+                                                className="btn-download"
+                                                onClick={() => handleDownload(student.registration)}
+                                            >
+                                                Download Certificate
+                                            </button>
+                                        )}
+                                    </div>
+                                </td>
+                                <td>
+                                    <button
+                                        className="btn-delete"
+                                        onClick={() => handleDelete(student.registration)}
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="pagination">
+                    <button
+                        className="pagination-btn"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </button>
+                    
+                    {[...Array(totalPages)].map((_, index) => {
+                        const page = index + 1;
+                        if (
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                            return (
+                                <button
+                                    key={index}
+                                    onClick={() => handlePageChange(page)}
+                                    className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                                >
+                                    {page}
+                                </button>
+                            );
+                        }
+                        if (page === 2 || page === totalPages - 1) {
+                            return (
+                                <button
+                                    key={index}
+                                    className="pagination-btn disabled"
+                                    disabled
+                                >
+                                    ...
+                                </button>
+                            );
+                        }
+                        return null;
+                    })}
+
+                    <button
+                        className="pagination-btn"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

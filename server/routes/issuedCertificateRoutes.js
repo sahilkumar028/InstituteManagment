@@ -124,7 +124,7 @@ router.post('/api/issued', async (req, res) => {
             IssueDay,
             IssueMonth,
             IssueYear,
-            photo: student.photo || null // Use student's photo if available
+            photo: `http://192.168.1.250:5000/api/images/${student.photo}` || null // Use student's photo if available
         });
 
         // Save to database
