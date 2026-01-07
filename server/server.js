@@ -28,6 +28,7 @@ app.use('/', issuedCertificateRoutes);
 app.use('/', pdfRoutes);
 app.use('/', feesPaymentRoutes);
 app.use('/', imageRoutes);
+app.use('/api/student-data', require('./routes/studentData'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -57,17 +57,20 @@ exports.createStudent = async (req, res) => {
             photo: photoPath,
             marksheet: marksheetPath,
             aadhaar: aadhaarPath,
-            reference
+            reference,
+            courseStatus: 'Incomplete'
         });
 
         const savedStudent = await student.save();
         res.status(201).json({ 
+            success: true,
             message: 'Student added successfully', 
-            studentId: savedStudent.regId 
+            studentId: savedStudent.regId
         });
     } catch (error) {
         console.error('Error creating student:', error);
         res.status(400).json({ 
+            success: false,
             message: 'Failed to create student', 
             error: error.message 
         });
@@ -100,17 +103,84 @@ exports.getStudentById = async (req, res) => {
 // Update student
 exports.updateStudent = async (req, res) => {
     try {
-        const student = await Student.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+        const { date, name, fatherName, motherName, dob, age, email, phone, address, course, fees, duration, durationOption, reference } = req.body;
+        const files = req.files;
+
+        // First, find the existing student to check if it exists
+        const existingStudent = await Student.findById(req.params.id);
+        if (!existingStudent) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Student not found' 
+            });
         }
-        res.json(student);
+
+        // Prepare update data
+        const updateData = {
+            date: new Date(date),
+            name,
+            fatherName,
+            motherName,
+            dob: new Date(dob),
+            age: parseInt(age),
+            email,
+            phone,
+            address,
+            course,
+            fees: parseInt(fees),
+            duration,
+            durationOption,
+            reference
+        };
+
+        // Handle file uploads if new files are provided
+        if (files) {
+            if (files['photo']) {
+                updateData.photo = files['photo'][0].filename;
+            }
+            if (files['marksheet']) {
+                updateData.marksheet = files['marksheet'][0].filename;
+            }
+            if (files['aadhaar']) {
+                updateData.aadhaar = files['aadhaar'][0].filename;
+            }
+        }
+
+        // Check for duplicate students (excluding the current student being updated)
+        const duplicateStudent = await Student.findOne({
+            email,
+            phone,
+            course,
+            name,
+            _id: { $ne: req.params.id } // Exclude current student
+        });
+
+        if (duplicateStudent) {
+            return res.status(400).json({
+                success: false,
+                message: 'A student with the same email, phone number, course, and name already exists.'
+            });
+        }
+
+        // Update the student
+        const updatedStudent = await Student.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: false } // Disable validators to avoid pre-save hook issues
+        );
+        
+        res.json({
+            success: true,
+            message: 'Student updated successfully',
+            data: updatedStudent
+        });
     } catch (error) {
-        res.status(400).json({ message: 'Failed to update student', error });
+        console.error('Error updating student:', error);
+        res.status(400).json({ 
+            success: false,
+            message: 'Failed to update student', 
+            error: error.message 
+        });
     }
 };
 
@@ -225,151 +295,3 @@ exports.downloadStudentsAsExcel = async (req, res) => {
     }
 };
 
-// Generate certificate
-exports.generateCertificate = async (registration) => {
-    try {
-        const student = await Student.findOne({ regId: registration });
-        if (!student) {
-            throw new Error('Student not found');
-        }
-
-        // Create the PDF document
-        const doc = new jsPDF({
-            orientation: 'portrait',
-            unit: 'pt',
-            format: 'a4',
-            margin: 1
-        });
-
-        const qrData = {
-            registration: student.regId,
-            name: student.name,
-            rollno: student.regId,
-            erollno: student.regId,
-            IssueSession: new Date().getFullYear(),
-            duration: student.duration,
-            performance: "Excellent",
-            Grade: "A+",
-            IssueDay: new Date().getDate(),
-            IssueMonth: new Date().toLocaleString('default', { month: 'long' }),
-            IssueYear: new Date().getFullYear()
-        };
-
-        const qrOptions = {
-            errorCorrectionLevel: 'H',
-            type: 'image/jpeg',
-            width: 200,
-            margin: 2
-        };
-
-        // Read and convert the student's photo to base64
-        const filename = student.photo.split('/').pop();
-        const filePath = 'uploads/' + filename;
-
-        try {
-            const stats = fs.lstatSync(filePath);
-
-            if (stats.isFile()) {
-                const buffer = fs.readFileSync(filePath);
-                const base64String = buffer.toString('base64');
-                const dataUrl = `data:image/jpeg;base64,${base64String}`;
-
-                const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrData), qrOptions);
-                console.log('QR Code Data URL:', qrDataUrl);
-
-                const barcodeDataUrl = await generateBarcode(student.regId);
-                doc.addImage(barcodeDataUrl, 'PNG', 450, 70, 85, 14);
-
-                // Add the QR code to the PDF
-                doc.addImage(qrDataUrl, 'JPEG', 70, 100, 85, 80);
-
-                // Add the image to the document
-                doc.addImage(dataUrl, "JPEG", 450, 100, 85, 70);
-            } else {
-                console.log(`The path ${filePath} is not a file.`);
-            }
-        } catch (error) {
-            console.log(`File not found or error reading the file: ${filePath}`);
-            console.error(error);
-        }
-
-        // Add text fields to the PDF
-        doc.setFontSize(14);
-        doc.text(`${student.regId}`, 70, 80);
-        doc.text(`${student.name}`, 220, 180);
-        doc.text(`${student.fatherName}`, 220, 205);
-        doc.text(`${student.motherName}`, 220, 230);
-        doc.text(`${new Date(student.dob).toLocaleDateString()}`, 440, 230);
-        doc.text(`${student.regId}`, 145, 260);
-        doc.text(`${student.regId}`, 310, 260);
-        doc.text(`${new Date().getFullYear()}`, 440, 260);
-        doc.text(`${student.duration}`, 220, 290);
-        doc.text(`Excellent`, 345, 340);
-
-        doc.setFont("helvetica", "bold");
-        doc.text(`Certificate of Completion`, 300, 430, null, null, "center");
-
-        // Table Headers
-        const tableStartY = 465;
-        const pageWidth = doc.internal.pageSize.width;
-        const rectangleWidth = 440;
-        const x = (pageWidth - rectangleWidth) / 2;
-        doc.setFontSize(11);
-        doc.setLineWidth(2);
-        doc.rect(x, tableStartY, rectangleWidth, 15);
-        doc.text("S.NO", 85, tableStartY + 10);
-        doc.text("Subject", 120, tableStartY + 10);
-        doc.text("Total", 320, tableStartY + 10);
-        doc.text("Theory", 355, tableStartY + 10);
-        doc.text("Practical", 400, tableStartY + 10);
-        doc.text("Obtained", 455, tableStartY + 10);
-
-        // Add Rows
-        let totalTheory = 0;
-        let totalPractical = 0;
-        let totalObtained = 0;
-        const maxRows = 6;
-        let maxMarks = 0;
-        doc.setFont("times", "normal");
-
-        for (let index = 0; index < maxRows; index++) {
-            const rowY = tableStartY + 15 + index * 15;
-            doc.rect(x, rowY, rectangleWidth, 15);
-            doc.text(`${index + 1}`, 85, rowY + 10);
-            doc.text(`Subject ${index + 1}`, 120, rowY + 10);
-            doc.text(`100`, 320, rowY + 10);
-            doc.text(`40`, 355, rowY + 10);
-            doc.text(`60`, 400, rowY + 10);
-            doc.text(`90`, 455, rowY + 10);
-
-            maxMarks += 100;
-            totalTheory += 40;
-            totalPractical += 60;
-            totalObtained += 90;
-        }
-
-        // Add Total Row
-        const totalRowY = tableStartY + 15 + maxRows * 15;
-        doc.rect(x, totalRowY, rectangleWidth, 15);
-        doc.text("Total", 120, totalRowY + 10);
-        doc.text(`${maxMarks}`, 320, totalRowY + 10);
-        doc.text(`${totalTheory}`, 355, totalRowY + 10);
-        doc.text(`${totalPractical}`, 400, totalRowY + 10);
-        doc.text(`${totalObtained}`, 455, totalRowY + 10);
-
-        // Add Issue Details
-        doc.setFontSize(16);
-        doc.text(`A+`, 240, 610);
-        doc.text(`${new Date().getDate()}`, 240, 635);
-        doc.text(`${new Date().toLocaleString('default', { month: 'long' })} ${new Date().getFullYear()}`, 355, 635);
-
-        // Save PDF to a file and return the path
-        const pdfPath = `./uploads/certificate_${student.regId}.pdf`;
-        doc.save(pdfPath);
-        return pdfPath;
-
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
-}; 

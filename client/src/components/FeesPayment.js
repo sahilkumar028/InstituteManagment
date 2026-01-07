@@ -164,6 +164,7 @@ const FeesPayment = () => {
                                     <th>Date</th>
                                     <th>Amount</th>
                                     <th>Method</th>
+                                    <th>remarks</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -175,6 +176,7 @@ const FeesPayment = () => {
                                         <td>{new Date(payment.paymentDate).toLocaleDateString()}</td>
                                         <td>₹{payment.amount}</td>
                                         <td>{payment.paymentMethod}</td>
+                                        <td>{payment.remarks}</td>
                                         <td>{payment.status}</td>
                                         <td>
                                             <button 

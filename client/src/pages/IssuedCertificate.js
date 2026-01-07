@@ -38,8 +38,12 @@ const IssuedCertificate = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const courses = [
         { name: 'Office Automation'},
-        { name: 'Diploma in Computer Application and Accounting'},
+        { name: 'Diploma in Computer Application & Accounting'},
+        { name: 'Diploma in Computer Application'},
+        { name: 'Diploma in Computer Application & Designing'},
         { name: 'Advance Diploma in Computer Application'},
+        { name: 'Diploma in Computer Aided Design'},
+        { name: 'Certificate Courses in Desktop Publication'},
         { name: 'Certificate Courses'},
         { name: 'Spoken English'}
       ];
@@ -284,7 +288,6 @@ const IssuedCertificate = () => {
                         className="form-control"
                         value={formValues.erollno}
                         onChange={handleChange}
-                        disabled
                     />
                 </div>
                 <div className="form-group">

@@ -82,12 +82,14 @@ router.post('/api/issued', async (req, res) => {
             });
         }
 
-        // Check if certificate already exists
-        const existingCertificate = await Result.findOne({ registration });
+        // Check if certificate already exists for the given enrollment number
+        const existingCertificate = await Result.findOne({ erollno });
         if (existingCertificate) {
-            return res.status(400).json({
-                success: false,
-                message: 'Certificate already exists for this student'
+            return res.status(200).json({
+                success: true,
+                exists: true,
+                message: 'Certificate already exists for this enrollment number',
+                data: existingCertificate
             });
         }
 
@@ -155,9 +157,9 @@ router.post('/api/issued', async (req, res) => {
 });
 
 // Delete certificate
-router.delete('/api/issued/:registration', async (req, res) => {
+router.delete('/api/issued/:enrollno', async (req, res) => {
     try {
-        const certificate = await Result.findOneAndDelete({ registration: req.params.registration });
+        const certificate = await Result.findOneAndDelete({ erollno: req.params.enrollno });
         if (!certificate) {
             return res.status(404).json({
                 success: false,
@@ -177,7 +179,7 @@ router.delete('/api/issued/:registration', async (req, res) => {
     }
 });
 
-// Create certificate by registration number
-router.get('/api/createCertificate/:registration', require('../controllers/issuedCertificateController').issueCertificate);
+// Create certificate by enrollment number (erollno)
+router.get('/api/createCertificate/:erollno', require('../controllers/issuedCertificateController').issueCertificate);
 
 module.exports = router; 

@@ -47,15 +47,15 @@ const IssuedCertificateDownloads = () => {
         }
     };
 
-    const handleDownload = (registration) => {
-        window.open(`${process.env.REACT_APP_API}/api/createCertificate/${registration}`, '_blank');
+    const handleDownload = (enrollno) => {
+        window.open(`${process.env.REACT_APP_API}/api/createCertificate/${enrollno}`, '_blank');
     };
 
-    const handleDelete = async (registration) => {
+    const handleDelete = async (enrollno) => {
         if (window.confirm("Are you sure you want to delete this certificate?")) {
             try {
-                await axios.delete(`${process.env.REACT_APP_API}/api/issued/${registration}`);
-                const updatedCertificates = certificates.filter((cert) => cert.registration !== registration);
+                await axios.delete(`${process.env.REACT_APP_API}/api/issued/${enrollno}`);
+                const updatedCertificates = certificates.filter((cert) => cert.enrollno !== enrollno);
                 setCertificates(updatedCertificates);
                 setFilteredCertificates(updatedCertificates);
                 alert('Certificate deleted successfully!');
@@ -168,6 +168,7 @@ const IssuedCertificateDownloads = () => {
                                 </td>
                                 <td>{student.name}</td>
                                 <td>{student.registration}</td>
+                                <td>{student.erollno}</td>
                                 <td>{student.fathersname}</td>
                                 <td>{student.mothersname}</td>
                                 <td>{new Date(student.dob).toLocaleDateString()}</td>
@@ -179,7 +180,7 @@ const IssuedCertificateDownloads = () => {
                                         {student.certificate && (
                                             <button
                                                 className="btn-download"
-                                                onClick={() => handleDownload(student.registration)}
+                                                onClick={() => handleDownload(student.erollno)}
                                             >
                                                 Download Certificate
                                             </button>
@@ -189,7 +190,7 @@ const IssuedCertificateDownloads = () => {
                                 <td>
                                     <button
                                         className="btn-delete"
-                                        onClick={() => handleDelete(student.registration)}
+                                        onClick={() => handleDelete(student.erollno)}
                                     >
                                         Delete
                                     </button>

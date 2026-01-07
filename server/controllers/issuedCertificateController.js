@@ -66,9 +66,10 @@ exports.getCertificateById = async (req, res) => {
 // Issue new certificate
 exports.issueCertificate = async (req, res) => {
     try {
-        // Fetch student data by registration number using Result model
-        const certificate = await Result.findOne({ registration: req.params.registration });
-
+        // Support both :erollno and :enrollno as route params
+        const enrollParam = req.params.erollno || req.params.enrollno;
+        const certificate = await Result.findOne({ erollno: enrollParam });
+        console.log(certificate);
         if (!certificate) {
             return res.status(404).send("Certificate not found");
         }
@@ -102,19 +103,7 @@ exports.issueCertificate = async (req, res) => {
             margin: 1
         });
 
-        const qrData = {
-            registration,
-            name,
-            rollno,
-            erollno,
-            IssueSession,
-            duration,
-            performance,
-            Grade,
-            IssueDay,
-            IssueMonth,
-            IssueYear
-        };
+        const qrData = 'Registraion No :'+registration+' | Name : '+name+' | performance : '+ performance +' | Course : '+cert;
 
         const qrOptions = {
             errorCorrectionLevel: 'H',
@@ -181,7 +170,8 @@ exports.issueCertificate = async (req, res) => {
         doc.text(`${titleCase(performance)}`, 345, 340);
 
         doc.setFont("helvetica", "bold");
-        doc.text(`${titleCase(cert)}`, 300, 430, null, null, "center");
+        // doc.text(`${titleCase(cert)}`, 300, 430, null, null, "center");
+        doc.text(`${cert}`, 300, 430, null, null, "center");
 
         // Table Headers
         const tableStartY = 465;

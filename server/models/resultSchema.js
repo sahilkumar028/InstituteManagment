@@ -8,7 +8,7 @@ const resultSchema = new mongoose.Schema({
     registration: {
         type: String,
         required: true,
-        unique: true
+        unique:false
     },
     name: {
         type: String,
@@ -32,7 +32,8 @@ const resultSchema = new mongoose.Schema({
     },
     erollno: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     IssueSession: {
         type: String,
